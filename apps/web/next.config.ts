@@ -8,4 +8,5 @@ const nextConfig: NextConfig = {
   compiler: { emotion: true },
 };
 
+/** 정적 배포와 Emotion 변환 설정을 개발 서버와 빌드에 동일하게 적용한다. */
 export default nextConfig;
