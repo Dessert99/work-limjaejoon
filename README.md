@@ -7,7 +7,7 @@ pnpm install
 pnpm dev
 ```
 
-개발 서버는 `http://localhost:3000`에서 열린다. `/`와 `/style-check/`는 스타일 검증용 페이지다.
+개발 서버는 `http://localhost:3000`에서 열린다. `/`에서 이미지 변환 도구로 이동할 수 있다.
 
 ```sh
 pnpm typecheck
@@ -36,8 +36,20 @@ pnpm build
 pnpm test
 ```
 
-테스트는 정적 HTML의 본문, 제목, 설명과 Emotion 스타일을 검사한다. Chromium에서 JavaScript를 끈 초기 스타일, 상태 변경, 클라이언트 페이지 이동, 새로고침, 콘솔 오류와 hydration 오류를 확인한다. 검증용 정적 서버는 테스트가 실행하고 종료한다.
+테스트는 서비스가 정한 입력 제한과 오류 복구, JPEG 흰 배경 처리, 출력 형식 불일치 거절, 이전 작업 결과 무시, 단일 파일 정책, 인코딩 실패 처리를 검증한다. 정적 렌더링·스타일·hydration과 브라우저 기본 인코딩·다운로드 동작은 테스트하지 않는다. 검증용 정적 서버는 테스트가 실행하고 종료한다.
 
-Next.js의 [CSS-in-JS 안내](https://nextjs.org/docs/app/guides/css-in-js)에서 Emotion의 App Router 지원은 진행 중으로 분류된다. 현재 구성은 위의 정적 페이지 범위를 검증한다. 향후 스트리밍, Suspense, Emotion Global 등 사용 범위를 넓히면 해당 동작도 추가 검증한다.
+## 이미지 변환
 
-이미지 변환 기능, NestJS 앱, 배포는 이번 구성에 포함하지 않는다.
+`/tools/image-converter/`에서 PNG, JPEG, WebP 이미지 한 장을 선택해 변환하고 다운로드한다. 서버 업로드와 추가 라이브러리 없이 브라우저의 Canvas API를 사용한다.
+
+- 품질 조절: JPEG와 WebP, 기본 85%. PNG는 품질 옵션을 제공하지 않는다.
+- 투명도: PNG와 WebP는 유지하며 JPEG는 흰 배경으로 변환한다.
+- 입력 제한: 20 MiB, 2,400만 화소, 한 변 8,192px 이하. 해상도 검사는 디코딩 이후이므로 이미지 디코딩 자체의 메모리 사용까지 제한하지는 않는다.
+- 브라우저가 요청한 출력 형식 대신 PNG를 반환하면 오류를 표시한다.
+- 애니메이션은 첫 프레임만 처리하며 원본 메타데이터는 보존하지 않는다.
+
+`features/image-converter`에서 화면 컴포넌트, 작업 흐름을 관리하는 훅, React에 의존하지 않는 변환 함수를 분리했다. 훅이 오래된 작업 결과를 무시하고 Blob URL을 해제하며, 변환 함수는 ImageBitmap과 Canvas 자원을 해제한다. 파일이나 옵션을 변경하면 기존 결과가 초기화된다.
+
+변환 API의 근거는 [Canvas toBlob](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)과 [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/Window/createImageBitmap) 문서에서 확인할 수 있다.
+
+일괄 변환, 리사이즈, Worker, NestJS 앱과 배포는 포함하지 않는다.
