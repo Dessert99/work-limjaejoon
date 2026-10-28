@@ -9,6 +9,9 @@
     "lint": "pnpm -r lint",
     "build": "pnpm -r build",
     "preview": "pnpm --filter @work/web preview",
-    "test": "pnpm --filter @work/web test"
+    "test": "pnpm --filter @work/web test",
+    "scene:setup": "node scripts/blender/run.mjs setup",
+    "scene:open": "node scripts/blender/run.mjs open",
+    "scene:export": "node scripts/blender/run.mjs export"
   }
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender 웹 작업"
+  short_description: "Blender 장면을 수정하고 저장 결과를 웹 미리보기에서 확인합니다"
+  default_prompt: "$blender-web-workflow로 작업실 장면을 수정하고 웹 반영 결과를 확인해줘."

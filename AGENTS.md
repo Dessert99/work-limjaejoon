@@ -35,3 +35,11 @@ apps/
 - 각 앱은 자체 `package.json`을 두고 독립적으로 빌드하고 배포한다.
 - 폴더와 공통 패키지는 실제로 필요한 시점에 만든다.
 - 프론트엔드에서 백엔드 내부 코드를 직접 가져오지 않는다.
+
+## Blender 웹 작업
+
+- Blender 조작은 Codex와 `blender` MCP를 사용한다. 반복 절차는 `.agents/skills/blender-web-workflow/SKILL.md`, 설정과 복구는 `docs/blender-workflow.md`를 따른다.
+- 작업 원본은 `assets/blender/workshop.blend`, 내보낼 컬렉션은 `Workshop`이다. 원본과 웹 GLB를 함께 보관한다.
+- 기존 사물 이름과 도구 연결용 사용자 속성을 임의로 바꾸지 않는다.
+- 웹 반영은 저장 후 GLB 내보내기로 처리한다. 내보내기와 브라우저 확인이 성공했을 때만 완료로 보고한다.
+- 작업용 미리보기는 `/dev/scene/`에 두며 페이지와 메타데이터는 Server Component를 유지한다.
