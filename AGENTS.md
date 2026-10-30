@@ -57,11 +57,11 @@ apps/
 ## Blender 작업
 
 - Blender 조작은 Codex와 `blender` MCP를 사용한다.
-- 작업 원본은 현재 작업 폴더의 `assets/blender/workshop.blend`, 내보낼 컬렉션은 `Workshop`이다.
+- 작업 원본은 현재 작업 폴더의 `assets/blender/toolbax.blend`, 내보낼 컬렉션은 `Toolbax`이다.
 - 작업 전 MCP 연결 상태와 열린 파일 경로를 확인한다. 다른 파일이 열려 있으면 저장되지 않은 작업을 덮어쓰지 말고 원본으로 전환해도 되는지 확인한다.
 - 기존 사물 이름과 도구 연결용 사용자 속성을 임의로 바꾸지 않는다.
 - 의미 있는 수정 후 `.blend` 원본을 저장한다. 저장만으로 GLB를 내보내지 않는다.
-- 사용자가 GLB 내보내기나 웹 반영을 요청한 경우에만 Blender 기본 glTF 내보내기를 사용한다. 기본 경로는 `apps/web/public/models/workshop/scene.glb`다.
-- GLB는 `Workshop` 컬렉션을 대상으로 모디파이어와 사용자 속성을 포함하고, 카메라와 조명은 제외한다. 재질은 glTF 호환 노드를 사용한다.
+- 사용자가 GLB 내보내기나 웹 반영을 요청한 경우에만 Blender 기본 glTF 내보내기를 사용한다. 기본 경로는 `apps/web/public/models/toolbax/scene.glb`다.
+- GLB는 `Toolbax` 컬렉션을 대상으로 모디파이어와 사용자 속성을 포함하고, 카메라와 조명은 제외한다. 재질은 glTF 호환 노드를 사용한다.
 - 수정 결과는 Blender 화면에서 확인하고, 저장과 내보내기 여부를 구분해 보고한다. 웹 반영은 브라우저에서 실제 장면까지 확인한 경우에만 완료로 보고한다.
 - 현재 웹 미리보기는 없다. 웹 확인이 불가능하면 그 제한을 알린다.
