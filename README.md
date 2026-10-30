@@ -50,4 +50,4 @@ docker compose down
 
 `apps/api/Dockerfile`은 API 이미지 빌드를, `compose.yaml`은 로컬 포트와 환경변수, `/tmp`의 1GiB tmpfs를 설정한다. 각 설정의 역할은 파일 안에 주석으로 적었다. macOS에서는 tmpfs가 Docker의 Linux VM 안에 생성된다. tmpfs만으로 스왑까지 금지되는 것은 아니므로, 운영 환경에서 SSD 기록을 막으려면 VM의 스왑 설정도 별도로 확인해야 한다. 파일 변환 프로그램과 업로드·삭제 로직은 해당 기능을 구현할 때 추가한다.
 
-Blender는 Codex와 Blender MCP로 조작하고, GLB는 요청할 때만 내보낸다. 작업 원칙은 `AGENTS.md`, 설정과 연결 복구는 [Blender 작업 안내](docs/blender-workflow.md)를 따른다. 연습용 모델과 프로젝트 전용 스크립트는 제거된 상태이며 현재 웹 미리보기는 없다.
+Blender는 Codex와 Blender MCP로 조작하고, GLB는 요청할 때만 내보낸다. 작업 원칙은 `AGENTS.md`를 따른다. 연습용 모델과 프로젝트 전용 스크립트는 제거된 상태이며 현재 웹 미리보기는 없다.

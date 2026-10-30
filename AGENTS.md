@@ -56,7 +56,7 @@ apps/
 
 ## Blender 작업
 
-- Blender 조작은 Codex와 `blender` MCP를 사용한다. 설정과 연결 복구는 `docs/blender-workflow.md`를 따른다.
+- Blender 조작은 Codex와 `blender` MCP를 사용한다.
 - 작업 원본은 현재 작업 폴더의 `assets/blender/workshop.blend`, 내보낼 컬렉션은 `Workshop`이다.
 - 작업 전 MCP 연결 상태와 열린 파일 경로를 확인한다. 다른 파일이 열려 있으면 저장되지 않은 작업을 덮어쓰지 말고 원본으로 전환해도 되는지 확인한다.
 - 기존 사물 이름과 도구 연결용 사용자 속성을 임의로 바꾸지 않는다.
