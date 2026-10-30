@@ -3,16 +3,25 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "pnpm --filter @work/web dev",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "lint": "eslint *.mjs --max-warnings=0 && pnpm -r lint",
+    "lint:fix": "eslint *.mjs --fix --max-warnings=0 && pnpm -r lint:fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "build": "pnpm -r build",
-    "preview": "pnpm --filter @work/web preview",
-    "scene:setup": "node scripts/blender/run.mjs setup",
-    "scene:open": "node scripts/blender/run.mjs open",
-    "scene:export": "node scripts/blender/run.mjs export"
+    "preview": "pnpm --filter @work/web preview"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "^8.72.1"
   }
 }

@@ -1,0 +1,16 @@
+# 호스트 의존성과 빌드 산출물 대신 컨테이너에서 새로 설치하고 빌드한다.
+**/node_modules
+**/dist
+**/.next
+**/out
+**/*.tsbuildinfo
+# 버전 이력과 로컬 비밀값을 빌드 컨텍스트에서 제외한다.
+.git
+**/.env*
+# API 빌드에 필요 없는 프론트 소스와 대용량 모델을 전송하지 않는다.
+apps/web
+assets
+# API 실행에 필요 없는 작업 문서와 개발 도구를 제외한다.
+.agents
+docs
+scripts

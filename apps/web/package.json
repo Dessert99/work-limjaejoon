@@ -2,13 +2,18 @@
   "name": "@work/web",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3100",
     "typecheck": "next typegen && tsc --noEmit",
-    "lint": "eslint .",
-    "build": "next build",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "build": "next build --webpack",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "http-server out -a 127.0.0.1 -p 4173 -c-1"
   },
   "dependencies": {
+    "@jsquash/oxipng": "^2.3.0",
+    "fflate": "^0.8.3",
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1"
@@ -20,6 +25,7 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "16.4.3",
     "http-server": "^14.1.1",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
   }
 }

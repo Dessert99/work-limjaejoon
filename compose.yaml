@@ -1,0 +1,27 @@
+# 로컬에서 실행할 컨테이너를 정의한다.
+services:
+  # 프론트는 pnpm dev로 실행하고 API만 컨테이너로 실행한다.
+  api:
+    # 모노레포 루트의 잠금 파일을 포함해 API 이미지를 빌드한다.
+    build:
+      # Dockerfile의 COPY 기준 경로를 프로젝트 루트로 지정한다.
+      context: .
+      # API 전용 이미지 정의를 사용한다.
+      dockerfile: apps/api/Dockerfile
+    # 자식 프로세스를 회수하고 종료 신호를 전달한다.
+    init: true
+    # 로컬에서만 접근을 허용하고 API_PORT로 호스트 포트를 바꿀 수 있게 한다.
+    ports:
+      - '127.0.0.1:${API_PORT:-3101}:3101'
+    # 서버 실행에 필요한 환경변수를 전달한다.
+    environment:
+      # 컨테이너 내부 API 수신 포트로 포트 매핑과 일치해야 한다.
+      PORT: '3101'
+      # 로컬 프론트 주소만 브라우저의 교차 출처 요청을 허용한다.
+      FRONTEND_ORIGIN: http://localhost:3100
+      # 임시 경로를 참조하는 프로그램이 메모리 디스크를 사용하게 한다.
+      TMPDIR: /tmp
+    # 임시 파일 경로를 컨테이너 디스크 대신 메모리 파일시스템에 둔다.
+    tmpfs:
+      # /tmp 전체의 크기를 1GiB로 제한하고 일반 사용자도 임시 파일을 만들 수 있게 한다.
+      - /tmp:size=1g,mode=1777

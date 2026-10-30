@@ -1,10 +1,7 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTypeScript from "eslint-config-next/typescript";
+import { defineConfig } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTypeScript from 'eslint-config-next/typescript';
+import prettier from 'eslint-config-prettier/flat';
 
-/** App Router 규칙을 유지하면서 생성 파일은 린트 대상에서 제외한다. */
-export default defineConfig([
-  ...nextVitals,
-  ...nextTypeScript,
-  globalIgnores([".next/**", "out/**", "next-env.d.ts", "test-results/**", "playwright-report/**"]),
-]);
+/** Next.js 권장 규칙을 적용하고 포맷은 Prettier에 맡긴다. */
+export default defineConfig([...nextVitals, ...nextTypeScript, prettier]);
