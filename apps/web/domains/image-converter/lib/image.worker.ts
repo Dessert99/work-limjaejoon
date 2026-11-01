@@ -1,6 +1,6 @@
 import { zipSync } from 'fflate';
-import { convertImage } from '../libs/convert-image';
-import type { ImageRequest, ImageResponse } from '../types/image-converter';
+import { convertImage } from './convert-image';
+import type { ImageRequest, ImageResponse } from '../model/image-converter';
 
 function respond(message: ImageResponse) {
   self.postMessage(message);

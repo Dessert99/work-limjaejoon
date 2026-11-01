@@ -1,4 +1,4 @@
-import type { ImageFormat } from '../types/image-converter';
+import type { ImageFormat } from '../model/image-converter';
 
 /** 이미지 디코딩 전에 형식·해상도·애니메이션을 확인한다. */
 export type ImageHeader = {

@@ -1,6 +1,6 @@
 import { optimisePng } from './optimise-png';
 import { readImageHeader } from './image-header';
-import type { ConvertOptions, ImageResult } from '../types/image-converter';
+import type { ConvertOptions, ImageResult } from '../model/image-converter';
 
 /** 미리보기와 다운로드에 같은 브라우저 변환 결과를 제공한다. */
 export async function convertImage(

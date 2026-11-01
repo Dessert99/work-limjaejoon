@@ -1,13 +1,13 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 import { unzipSync } from 'fflate';
-import { convertImage } from '../libs/convert-image';
+import { convertImage } from './convert-image';
 import type {
   ImageRequest,
   ImageResponse,
   ImageResult,
-} from '../types/image-converter';
+} from '../model/image-converter';
 
-vi.mock('../libs/convert-image', () => ({ convertImage: vi.fn() }));
+vi.mock('./convert-image', () => ({ convertImage: vi.fn() }));
 
 const postMessage = vi.fn<(message: ImageResponse) => void>();
 let worker: {

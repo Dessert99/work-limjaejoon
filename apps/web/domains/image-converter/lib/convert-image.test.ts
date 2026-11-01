@@ -1,7 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 import { convertImage } from './convert-image';
 import { optimisePng } from './optimise-png';
-import type { ConvertOptions } from '../types/image-converter';
+import type { ConvertOptions } from '../model/image-converter';
 
 vi.mock('./optimise-png', () => ({ optimisePng: vi.fn() }));
 

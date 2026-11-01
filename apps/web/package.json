@@ -2,26 +2,37 @@
   "name": "@work/web",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3100",
+    "dev": "next dev --webpack -p 3100",
     "typecheck": "next typegen && tsc --noEmit",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . --max-warnings=0 && pnpm check:architecture",
     "lint:fix": "eslint . --fix --max-warnings=0",
     "build": "next build --webpack",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "http-server out -a 127.0.0.1 -p 4173 -c-1"
+    "preview": "http-server out -a 127.0.0.1 -p 4173 -c-1",
+    "test:3d": "node app/_components/toolbax/preview.browser.mjs",
+    "model:compress": "gltf-transform meshopt ../../assets/blender/scene.raw.glb public/models/toolbax/scene.glb",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
     "@jsquash/oxipng": "^2.3.0",
+    "@react-three/fiber": "^9.8.2",
+    "@vanilla-extract/css": "^1.21.3",
+    "@vanilla-extract/next-plugin": "^2.5.2",
     "fflate": "^0.8.3",
     "next": "16.4.3",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "three": "^0.187.0"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.186.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.4.3",
     "http-server": "^14.1.1",

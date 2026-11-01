@@ -9,3 +9,8 @@ out/
 *.blend1
 *.blend2
 __pycache__/
+
+# Blender 내보내기 중간 산출물
+/assets/blender/scene.raw.glb
+/assets/blender/textures/pocket_emission_baked.png
+/assets/blender/textures/beam_emission_baked.png
