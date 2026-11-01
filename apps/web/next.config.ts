@@ -1,3 +1,4 @@
+import { createVanillaExtractPlugin } from '@vanilla-extract/next-plugin';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -8,4 +9,4 @@ const nextConfig: NextConfig = {
 };
 
 /** 정적 배포 설정을 개발 서버와 빌드에 동일하게 적용한다. */
-export default nextConfig;
+export default createVanillaExtractPlugin()(nextConfig);

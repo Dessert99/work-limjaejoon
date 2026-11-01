@@ -1,13 +1,11 @@
-import type { ImageRequest, ImageResponse } from '../types/image-converter';
+import type { ImageRequest, ImageResponse } from '../model/image-converter';
 
 /** 실행 중 옵션이 바뀌면 Worker 자체를 종료해 이전 변환의 연산도 중단한다. */
 export function runImageWorker(
   request: ImageRequest,
   onMessage: (message: ImageResponse) => void
 ): () => void {
-  const worker = new Worker(
-    new URL('../workers/image.worker.ts', import.meta.url)
-  );
+  const worker = new Worker(new URL('./image.worker.ts', import.meta.url));
   worker.onmessage = (event: MessageEvent<ImageResponse>) => {
     if (event.data.type !== 'progress') worker.terminate();
     onMessage(event.data);
