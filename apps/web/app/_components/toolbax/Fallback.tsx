@@ -1,15 +1,17 @@
 'use client';
 import { useEffect } from 'react';
-import Poster from './Poster';
+import * as styles from './preview.css';
 
-/** WebGL 대체 화면으로 전환된 상태를 알린다. */
-export default function Fallback({
-  onStatus,
-}: {
-  onStatus: (value: string) => void;
-}) {
+/** 이미지 대체 없이 오류를 알리고 로딩 대기를 끝낸다. */
+export default function Fallback({ onError }: { onError: () => void }) {
   useEffect(() => {
-    onStatus('3D를 표시할 수 없어 정지 이미지로 보여드립니다.');
-  }, [onStatus]);
-  return <Poster />;
+    onError();
+  }, [onError]);
+  return (
+    <div
+      className={styles.loadingScreen}
+      role='alert'>
+      3D 장면을 불러오지 못했습니다. 페이지를 새로고침해 주세요.
+    </div>
+  );
 }

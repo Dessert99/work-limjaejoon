@@ -4,42 +4,114 @@ import os
 import math
 import struct
 import numpy as np
+from mathutils import Vector
 
-# 원본을 저장한 뒤 내보내기용 베이크를 수행하고 저장된 원본으로 복귀한다.
+# 원본은 보존하고 임시 내보내기 상태만 베이크한 뒤 원본으로 복귀한다.
 source = bpy.data.filepath
 root = os.path.dirname(os.path.dirname(os.path.dirname(source)))
 output = os.path.join(root, 'apps/web/public/models/toolbax')
-os.makedirs(output, exist_ok=True)
-scene = bpy.context.scene
+scene = bpy.data.scenes['Toolbax_Moonlit_Room']
+bpy.context.window.scene = scene
 if bpy.context.screen.is_animation_playing:
     bpy.ops.screen.animation_cancel(restore_frame=False)
 bpy.ops.wm.save_as_mainfile(filepath=source)
-objects = list(bpy.data.collections['Toolbax'].all_objects)
+objects = [o for o in scene.objects if o.type != 'CAMERA' and not o.hide_render and not o.hide_viewport]
+frames = range(1, 289)
 samples = {o.name: [] for o in objects}
 effects = []
+asset = bpy.data.objects['Backpack_Motion']
+arc = bpy.data.objects['Energy_Arc_0']
+raw_path = os.path.join(os.path.dirname(source), 'scene.raw.glb')
+
+def web_vector(vector):
+    return [vector.x, vector.z, -vector.y]
+
+
+def curves(action):
+    for layer in action.layers:
+        for strip in layer.strips:
+            for bag in strip.channelbags:
+                yield from bag.fcurves
+
+
 try:
-    # 사용자가 조명 포함을 요청했으므로 미리보기 조명도 내보내기 컬렉션에 연결한다.
-    for name in ['Preview_Key', 'Preview_Rim', 'Pocket_Glow_1']:
-        light = bpy.data.objects[name]
-        if light.name not in bpy.data.collections['Toolbax'].objects:
-            bpy.data.collections['Toolbax'].objects.link(light)
-    for frame in range(1, 97):
+    materials = {m for o in objects if hasattr(o.data, 'materials') for m in o.data.materials if m}
+    animated_materials = [m for m in materials if m.use_nodes and m.node_tree.animation_data]
+    for frame in frames:
         scene.frame_set(frame)
         for o in objects:
             keys = o.data.shape_keys if o.type == 'MESH' else None
             samples[o.name].append({
-                'location': list(o.location), 'rotation': list(o.rotation_euler),
-                'scale': list(o.scale),
+                'location': list(o.location), 'rotation_euler': list(o.rotation_euler), 'scale': list(o.scale),
                 'keys': {k.name: k.value for k in list(keys.key_blocks)[1:]} if keys else {},
             })
         values = {}
-        for name in ['입구 금빛', '부드러운 금빛 광선', '금빛 반짝임']:
-            material = bpy.data.materials[name]
+        for material in animated_materials:
             shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-            values[name] = shader.inputs['Emission Strength'].default_value
+            values[material.name] = shader.inputs['Emission Strength'].default_value
         values['light'] = bpy.data.objects['Pocket_Glow_1'].data.energy
+        values['arcStart'] = arc.data.bevel_factor_start
+        values['arcEnd'] = arc.data.bevel_factor_end
         effects.append(values)
-    scene.frame_set(1)
+    scene.frame_set(96)
+    camera = scene.camera
+    direction = camera.rotation_euler.to_matrix() @ Vector((0, 0, -1))
+    target = camera.location + direction * ((2.25 - camera.location.z) / direction.z)
+    background = next(n for n in scene.world.node_tree.nodes if n.type == 'BACKGROUND')
+    asset['toolbax_view'] = {
+        'position': web_vector(camera.location), 'target': web_vector(target),
+        'aspect': scene.render.resolution_x / scene.render.resolution_y,
+        'fov': math.degrees(2 * math.atan(camera.data.sensor_width / (2 * camera.data.lens * scene.render.resolution_x / scene.render.resolution_y))),
+        'worldColor': list(background.inputs['Color'].default_value)[:3],
+        'worldStrength': background.inputs['Strength'].default_value,
+        'exposure': scene.view_settings.exposure,
+    }
+    asset['toolbax_playback'] = {'fps': scene.render.fps, 'idleStart': 96, 'idleEnd': 288}
+    asset['toolbax_effects'] = {'fps': scene.render.fps, 'tracks': {name: [f[name] for f in effects] for name in effects[0]}}
+    # 면광원은 위치와 출력까지 자산에 기록해 웹에서 복원한다.
+    for light in [o for o in objects if o.type == 'LIGHT']:
+        data = light.data
+        if data.type != 'AREA':
+            continue
+        width = data.size * math.sqrt(math.pi) / 2 if data.shape == 'DISK' else data.size
+        height = width if data.shape in {'DISK', 'SQUARE'} else data.size_y
+        light['toolbax_area_light'] = {'width': width, 'height': height, 'power': data.energy, 'shape': data.shape, 'color': list(data.color)}
+        proxy = bpy.data.lights.new(light.name + '_GLTF', 'SPOT')
+        proxy.color = data.color
+        proxy.energy = data.energy / math.pi
+        proxy.spot_size = math.radians(100)
+        light.data = proxy
+    # 전체 나선의 UV에 경로 진행률을 기록해 길이가 변하는 Curve 기능을 웹에서 재현한다.
+    arc.data.animation_data_clear()
+    arc.data.bevel_factor_start = 0
+    arc.data.bevel_factor_end = 1
+    points = [Vector(p.co[:3]) for p in arc.data.splines[0].points]
+    lengths = [0]
+    for a, b in zip(points, points[1:]):
+        lengths.append(lengths[-1] + (b - a).length)
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    mesh = bpy.data.meshes.new_from_object(arc.evaluated_get(dg), depsgraph=dg)
+    # 곡선의 자동 UV 대신 경로 진행률을 첫 UV로 내보낸다.
+    while mesh.uv_layers:
+        mesh.uv_layers.remove(mesh.uv_layers[0])
+    uv = mesh.uv_layers.new(name='ArcProgress')
+    progress = []
+    for v in mesh.vertices:
+        index = min(range(len(points)), key=lambda i: (v.co - points[i]).length_squared)
+        progress.append(lengths[index] / lengths[-1])
+    for loop in mesh.loops:
+        uv.data[loop.index].uv = (progress[loop.vertex_index], 0.5)
+    replacement = bpy.data.objects.new(arc.name + '_Export', mesh)
+    replacement.parent = arc.parent
+    replacement.matrix_local = arc.matrix_local.copy()
+    replacement['toolbax_arc'] = True
+    for collection in arc.users_collection:
+        collection.objects.link(replacement)
+    name = arc.name
+    bpy.data.objects.remove(arc, do_unlink=True)
+    replacement.name = name
+    objects = [o for o in scene.objects if o.type != 'CAMERA' and not o.hide_render and not o.hide_viewport]
     for o in objects:
         o.animation_data_clear()
         if o.type != 'MESH':
@@ -56,69 +128,49 @@ try:
         dg = bpy.context.evaluated_depsgraph_get()
         base = bpy.data.meshes.new_from_object(o.evaluated_get(dg), depsgraph=dg)
         coordinates = {}
-        for name in names[1:]:
-            keys.key_blocks[name].value = 1
+        for key_name in names[1:]:
+            keys.key_blocks[key_name].value = 1
             bpy.context.view_layer.update()
             evaluated = o.evaluated_get(dg)
-            mesh = evaluated.to_mesh()
-            assert len(mesh.vertices) == len(base.vertices), o.name
-            coordinates[name] = [v.co.copy() for v in mesh.vertices]
+            temp = evaluated.to_mesh()
+            assert len(temp.vertices) == len(base.vertices), o.name
+            coordinates[key_name] = [v.co.copy() for v in temp.vertices]
             evaluated.to_mesh_clear()
-            keys.key_blocks[name].value = 0
+            keys.key_blocks[key_name].value = 0
         o.modifiers.clear()
         o.data = base
         if names:
             o.shape_key_add(name='Basis')
-            for name in names[1:]:
-                key = o.shape_key_add(name=name)
-                for vertex, coordinate in zip(key.data, coordinates[name]):
+            for key_name in names[1:]:
+                key = o.shape_key_add(name=key_name)
+                for vertex, coordinate in zip(key.data, coordinates[key_name]):
                     vertex.co = coordinate
     for o in objects:
-        for frame, sample in enumerate(samples[o.name], 1):
-            for prop in ['location', 'rotation_euler', 'scale']:
-                okey = 'rotation' if prop == 'rotation_euler' else prop
-                setattr(o, prop, sample[okey])
+        track = samples[o.name]
+        for prop in ['location', 'rotation_euler', 'scale']:
+            # 정적인 속성에는 불필요한 애니메이션 키를 만들지 않는다.
+            if all(sample[prop] == track[0][prop] for sample in track):
+                setattr(o, prop, track[0][prop])
+                continue
+            for frame, sample in enumerate(track, 1):
+                setattr(o, prop, sample[prop])
                 o.keyframe_insert(data_path=prop, frame=frame)
-            if o.type == 'MESH' and o.data.shape_keys:
-                for name, value in sample['keys'].items():
-                    key = o.data.shape_keys.key_blocks[name]
+        if o.type == 'MESH' and o.data.shape_keys:
+            for frame, sample in enumerate(track, 1):
+                for key_name, value in sample['keys'].items():
+                    key = o.data.shape_keys.key_blocks[key_name]
                     key.value = value
                     key.keyframe_insert(data_path='value', frame=frame)
-        # 표정 전환은 보간 중 찌그러지지 않도록 프레임 경계에서 바꾼다.
-        if o.type == 'MESH' and o.data.shape_keys:
-            action = o.data.shape_keys.animation_data.action
-            for layer in action.layers:
-                for strip in layer.strips:
-                    for bag in strip.channelbags:
-                        for curve in bag.fcurves:
-                            for key in curve.keyframe_points:
-                                key.interpolation = 'CONSTANT' if o.name.startswith('Eye_') else 'LINEAR'
-    # glTF의 sheen은 별도 가중치가 없어 색상에 Blender 강도를 반영한다.
+            for curve in curves(o.data.shape_keys.animation_data.action):
+                for key in curve.keyframe_points:
+                    key.interpolation = 'CONSTANT' if o.name.startswith('Eye_') else 'LINEAR'
     for name in ['가방 기본색', '로고 자수 실']:
         shader = next(n for n in bpy.data.materials[name].node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
         weight = shader.inputs['Sheen Weight'].default_value
         tint = shader.inputs['Sheen Tint'].default_value
         shader.inputs['Sheen Tint'].default_value = (*[c * weight for c in tint[:3]], 1)
         shader.inputs['Sheen Weight'].default_value = 1
-    # 비호환 절차 재질만 텍스처로 베이크해 GLB에서도 같은 분포를 사용한다.
-    def emission_image(material, name, pixels):
-        height, width, _ = pixels.shape
-        image = bpy.data.images.new(name, width=width, height=height, alpha=True)
-        image.colorspace_settings.name = 'Non-Color'
-        # glTF 발광 텍스처는 sRGB로 해석되므로 저장할 때 선형 값을 변환한다.
-        rgb = np.clip(pixels[:, :, :3], 0, 1)
-        pixels[:, :, :3] = np.where(rgb <= .0031308, rgb * 12.92, 1.055 * rgb ** (1 / 2.4) - .055)
-        image.pixels.foreach_set(pixels.astype(np.float32).ravel())
-        image.filepath_raw = os.path.join(os.path.dirname(source), 'textures', name + '.png')
-        image.file_format = 'PNG'
-        image.save()
-        image.pack()
-        image.colorspace_settings.name = 'sRGB'
-        node = material.node_tree.nodes.new('ShaderNodeTexImage')
-        node.image = image
-        shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-        material.node_tree.links.new(node.outputs['Color'], shader.inputs['Emission Color'])
-
+    # 주머니의 절차적 발광 분포를 표준 glTF 텍스처로 변환한다.
     material = bpy.data.materials['입구 금빛']
     ramps = [n for n in material.node_tree.nodes if n.type == 'VALTORGB']
     horizontal = next(n for n in ramps if n.label == '크림 중심에서 황금빛 가장자리로')
@@ -127,50 +179,38 @@ try:
     for y in range(64):
         for x in range(512):
             pixels[y, x, :3] = np.array(horizontal.color_ramp.evaluate(x / 511)[:3]) * np.array(vertical.color_ramp.evaluate(y / 63)[:3])
-    emission_image(material, 'pocket_emission_baked', pixels)
-    material = bpy.data.materials['부드러운 금빛 광선']
-    source_image = next(n.image for n in material.node_tree.nodes if n.type == 'TEX_IMAGE')
-    width, height = source_image.size
-    pixels = np.array(source_image.pixels[:], dtype=np.float32).reshape(height, width, 4)
-    pixels[:, :, :3] *= pixels[:, :, 3:4] ** 2.5
-    emission_image(material, 'beam_emission_baked', pixels)
-    scene.frame_set(78)
-    for name in ['입구 금빛', '부드러운 금빛 광선', '금빛 반짝임']:
-        material = bpy.data.materials[name]
+    rgb = np.clip(pixels[:, :, :3], 0, 1)
+    pixels[:, :, :3] = np.where(rgb <= .0031308, rgb * 12.92, 1.055 * rgb ** (1 / 2.4) - .055)
+    image = bpy.data.images.new('pocket_emission_baked', width=512, height=64, alpha=True)
+    image.colorspace_settings.name = 'Non-Color'
+    image.pixels.foreach_set(pixels.ravel())
+    image.filepath_raw = os.path.join(os.path.dirname(source), 'textures/pocket_emission_baked.png')
+    image.file_format = 'PNG'
+    image.save()
+    image.pack()
+    image.colorspace_settings.name = 'sRGB'
+    node = material.node_tree.nodes.new('ShaderNodeTexImage')
+    node.image = image
+    shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+    material.node_tree.links.new(node.outputs['Color'], shader.inputs['Emission Color'])
+    for material in animated_materials:
         material.node_tree.animation_data_clear()
         shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-        shader.inputs['Emission Strength'].default_value = effects[77][name]
-    # 면광원의 정보를 GLB에 기록하고 표준 spot 조명으로도 사용할 수 있게 전달한다.
-    for name in ['Preview_Key', 'Preview_Rim', 'Pocket_Glow_1']:
-        light = bpy.data.objects[name]
-        data = light.data
-        if data.type == 'AREA':
-            width = data.size * math.sqrt(math.pi) / 2 if data.shape == 'DISK' else data.size
-            height = width if data.shape in {'DISK', 'SQUARE'} else data.size_y
-            light['toolbax_area_light'] = {'width': width, 'height': height, 'power': data.energy, 'shape': data.shape, 'color': list(data.color)}
-            proxy = bpy.data.lights.new(name + '_GLTF', 'SPOT')
-            proxy.color = data.color
-            proxy.energy = data.energy / math.pi
-            proxy.spot_size = math.radians(100)
-            proxy.spot_blend = .75
-            light.data = proxy
-    asset = bpy.data.objects['Backpack_Motion']
-    asset['toolbax_effects'] = {'fps': scene.render.fps, 'tracks': {name: [frame[name] for frame in effects] for name in effects[0]}}
-    asset['toolbax_postprocessing'] = {'type': 'Fog Glow', 'threshold': 1.5, 'strength': 1.1, 'size': .75, 'view_transform': scene.view_settings.view_transform, 'exposure': scene.view_settings.exposure}
+        shader.inputs['Emission Strength'].default_value = effects[77][material.name]
+    export_collection = bpy.data.collections['Toolbax']
+    for o in objects:
+        if o.name not in export_collection.all_objects:
+            export_collection.objects.link(o)
     scene.frame_start = 1
-    scene.frame_end = 96
-    scene.frame_set(78)
+    scene.frame_end = 288
+    scene.frame_set(96)
     bpy.ops.export_scene.gltf(
-        filepath=os.path.join(os.path.dirname(source), 'scene.raw.glb'), export_format='GLB',
-        collection='Toolbax', use_active_collection_with_nested=True,
+        filepath=raw_path, export_format='GLB', collection='Toolbax', use_active_collection_with_nested=True,
         export_extras=True, export_cameras=False, export_lights=True, export_import_convert_lighting_mode='RAW',
         export_apply=False, export_animations=True, export_animation_mode='SCENE',
         export_frame_range=True, export_frame_step=1, export_force_sampling=True,
-        export_morph=True, export_morph_animation=True,
-        export_sampling_interpolation_fallback='LINEAR',
+        export_morph=True, export_morph_animation=True, export_sampling_interpolation_fallback='LINEAR',
     )
-    # 내보내기 샘플러의 순간 표정 전환을 자산 자체에 명시한다.
-    raw_path = os.path.join(os.path.dirname(source), 'scene.raw.glb')
     with open(raw_path, 'rb') as stream:
         raw = stream.read()
     length = struct.unpack_from('<I', raw, 12)[0]
@@ -188,6 +228,6 @@ try:
         stream.write(struct.pack('<II', len(encoded), 0x4E4F534A))
         stream.write(encoded)
         stream.write(tail)
-    print('GLB 및 발광 타이밍 내보내기 완료')
+    print('방, 도구 6개, 288프레임, 나선 경로 및 조명 메타데이터 내보내기 완료')
 finally:
     bpy.ops.wm.open_mainfile(filepath=source)

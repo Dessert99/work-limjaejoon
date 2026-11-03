@@ -10,7 +10,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "http-server out -a 127.0.0.1 -p 4173 -c-1",
-    "test:3d": "node app/_components/toolbax/preview.browser.mjs",
     "model:compress": "gltf-transform meshopt ../../assets/blender/scene.raw.glb public/models/toolbax/scene.glb",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check": "pnpm lint && pnpm typecheck && pnpm test"

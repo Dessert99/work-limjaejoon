@@ -6,6 +6,9 @@ import LightingAndCamera from './LightingAndCamera';
 import Glow from './Glow';
 
 type Props = {
+  enabled: boolean;
+  onReady: () => void;
+  host: HTMLDivElement | null;
   run: number;
   reduced: boolean;
   onReplay: () => void;
@@ -22,8 +25,8 @@ export default function ToolbaxScene({ fallback, ...props }: Props) {
       camera={{ position: [-4.6, 4.1, 10], fov: 28 }}
       fallback={fallback}
       gl={{ antialias: true }}>
-      <LightingAndCamera />
       <Suspense fallback={null}>
+        <LightingAndCamera />
         <Model {...props} />
       </Suspense>
       <Glow />
