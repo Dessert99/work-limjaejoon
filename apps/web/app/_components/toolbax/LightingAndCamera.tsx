@@ -48,10 +48,16 @@ export default function LightingAndCamera() {
     const controls = new OrbitControls(camera, gl.domElement);
     controls.target.copy(target);
     controls.enablePan = false;
-    controls.minDistance = 8;
-    controls.maxDistance = 22;
-    controls.maxPolarAngle = Math.PI * 0.55;
+    controls.enableZoom = false;
     controls.update();
+    // 원본 구도를 중심으로 각 방향 10도까지만 드래그 회전을 허용한다.
+    const rotationLimit = (10 * Math.PI) / 180;
+    const azimuth = controls.getAzimuthalAngle();
+    const polar = controls.getPolarAngle();
+    controls.minAzimuthAngle = azimuth - rotationLimit;
+    controls.maxAzimuthAngle = azimuth + rotationLimit;
+    controls.minPolarAngle = Math.max(0, polar - rotationLimit);
+    controls.maxPolarAngle = Math.min(Math.PI, polar + rotationLimit);
     const changed = () => invalidate();
     controls.addEventListener('change', changed);
     const pmrem = new PMREMGenerator(gl);

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import * as styles from './preview.css';
+import * as styles from './loading.css';
 
 /** 이미지 대체 없이 오류를 알리고 로딩 대기를 끝낸다. */
 export default function Fallback({ onError }: { onError: () => void }) {

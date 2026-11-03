@@ -17,16 +17,14 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { playbackTime, sampleEffects } from '@/domains/toolbax/lib/playback';
 
-import ToolLabels from './ToolLabels';
+import ToolLabels from '../ToolLabels';
 import type { PlaybackRange } from '@/domains/toolbax/model/scene';
 
 type Props = {
   enabled: boolean;
   onReady: () => void;
   host: HTMLDivElement | null;
-  run: number;
   reduced: boolean;
-  onReplay: () => void;
   onStatus: (status: string) => void;
 };
 
@@ -35,9 +33,7 @@ export default function Model({
   enabled,
   onReady,
   host,
-  run,
   reduced,
-  onReplay,
   onStatus,
 }: Props) {
   const gltf = useLoader(GLTFLoader, '/models/toolbax/scene.glb', (loader) =>
@@ -157,28 +153,27 @@ export default function Model({
 
   useEffect(() => {
     animation.action.reset().play();
-    const time = playbackTime(0, range, reduced);
+    const idleStart = (range.idleStart - 1) / range.fps;
+    // 동작 줄이기 전환 후에도 도구 등장 구간을 다시 재생하지 않는다.
+    if (reduced)
+      playback.current.elapsed = Math.max(playback.current.elapsed, idleStart);
+    const time = playbackTime(playback.current.elapsed, range, reduced);
     animation.mixer.setTime(time);
-    playback.current = { elapsed: 0, playing: enabled && !reduced };
+    playback.current.playing = enabled && !reduced;
     updateEffects(time);
     if (enabled)
       onStatus(
-        reduced ? '동작 줄이기 설정으로 마지막 장면을 표시합니다.' : '재생 중'
+        reduced
+          ? '동작 줄이기 설정으로 마지막 장면을 표시합니다.'
+          : playback.current.elapsed >= idleStart
+            ? '재생 중 · 대기 동작 반복'
+            : '재생 중'
       );
     invalidate();
     return () => {
       animation.mixer.stopAllAction();
     };
-  }, [
-    animation,
-    invalidate,
-    onStatus,
-    reduced,
-    run,
-    updateEffects,
-    range,
-    enabled,
-  ]);
+  }, [animation, invalidate, onStatus, reduced, updateEffects, range, enabled]);
 
   useFrame((_, delta) => {
     if (!reportedReady.current) {
@@ -202,15 +197,7 @@ export default function Model({
 
   return (
     <>
-      <primitive
-        object={gltf.scene}
-        onClick={(event: { delta: number; object: Object3D }) => {
-          let object: Object3D | null = event.object;
-          while (object && object.name !== 'Backpack_Motion')
-            object = object.parent;
-          if (object && event.delta < 3 && !reduced && enabled) onReplay();
-        }}
-      />
+      <primitive object={gltf.scene} />
       {host && (
         <ToolLabels
           host={host}

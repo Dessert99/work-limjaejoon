@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { colors } from '@/lib/styles/tokens';
-import * as styles from './preview.css';
+import * as styles from './loading.css';
 
 type Props = { onFinished: () => void; reduced: boolean | null };
 
