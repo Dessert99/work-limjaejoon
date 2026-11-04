@@ -2,11 +2,13 @@
 /* eslint-disable react-hooks/immutability -- Three.js 객체는 프레임마다 직접 갱신하는 렌더링 상태다. */
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AnimationClip,
   AnimationMixer,
   LoopOnce,
   Mesh,
+  Object3D,
   MeshStandardMaterial,
   RectAreaLight,
   SpotLight,
@@ -14,17 +16,28 @@ import {
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-import { sampleEffects } from '@/domains/toolbax/lib/playback';
+import { playbackTime, sampleEffects } from '@/domains/toolbax/lib/playback';
+
+import ToolLabels from '../ToolLabels';
+import type { PlaybackRange } from '@/domains/toolbax/model/scene';
 
 type Props = {
-  run: number;
+  enabled: boolean;
+  onReady: () => void;
+  host: HTMLDivElement | null;
   reduced: boolean;
-  onReplay: () => void;
   onStatus: (status: string) => void;
 };
 
 /** 자산의 애니메이션과 효과 데이터를 함께 재생한다. */
-export default function Model({ run, reduced, onReplay, onStatus }: Props) {
+export default function Model({
+  enabled,
+  onReady,
+  host,
+  reduced,
+  onStatus,
+}: Props) {
+  const router = useRouter();
   const gltf = useLoader(GLTFLoader, '/models/toolbax/scene.glb', (loader) =>
     loader.setMeshoptDecoder(MeshoptDecoder)
   );
@@ -43,8 +56,11 @@ export default function Model({ run, reduced, onReplay, onStatus }: Props) {
       ),
     };
   }, [gltf]);
+  const range = gltf.scene.getObjectByName('Backpack_Motion')!.userData
+    .toolbax_playback as PlaybackRange;
   const { invalidate } = useThree();
 
+  const reportedReady = useRef(false);
   const playback = useRef({ elapsed: 0, playing: false });
   const animation = useMemo(() => {
     RectAreaLightUniformsLib.init();
@@ -79,6 +95,33 @@ export default function Model({ run, reduced, onReplay, onStatus }: Props) {
     const action = mixer.clipAction(clip);
     action.setLoop(LoopOnce, 1);
     action.clampWhenFinished = true;
+    const arc = gltf.scene.getObjectByName('Energy_Arc_0') as Mesh;
+    const arcMaterial = (arc.material as MeshStandardMaterial).clone();
+    arc.material = arcMaterial;
+    const arcStart = { value: 0 };
+    const arcEnd = { value: 0 };
+    // 전체 나선 메시의 UV를 원본 경로 진행률로 사용해 Blender의 그리기 효과를 복원한다.
+    arcMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.arcStart = arcStart;
+      shader.uniforms.arcEnd = arcEnd;
+      shader.vertexShader =
+        'varying float vArcProgress;\n' +
+        shader.vertexShader.replace(
+          '#include <begin_vertex>',
+          '#include <begin_vertex>\nvArcProgress = uv.x;'
+        );
+      shader.fragmentShader =
+        'varying float vArcProgress; uniform float arcStart; uniform float arcEnd;\n' +
+        shader.fragmentShader.replace(
+          '#include <clipping_planes_fragment>',
+          '#include <clipping_planes_fragment>\nif (arcEnd <= arcStart || vArcProgress < arcStart || vArcProgress > arcEnd) discard;'
+        );
+    };
+    const toolRoots: Object3D[] = [];
+    gltf.scene.traverse((object) => {
+      if (object.userData.source_asset) toolRoots.push(object);
+    });
+    toolRoots.sort((a, b) => a.userData.layout_slot - b.userData.layout_slot);
     const materials = new Set<MeshStandardMaterial>();
     gltf.scene.traverse((object) => {
       if (!(object instanceof Mesh)) return;
@@ -88,7 +131,7 @@ export default function Model({ run, reduced, onReplay, onStatus }: Props) {
         if (material instanceof MeshStandardMaterial) materials.add(material);
       }
     });
-    return { mixer, action, duration: clip.duration, materials, glow };
+    return { mixer, action, materials, glow, arcStart, arcEnd, toolRoots };
   }, [gltf]);
 
   const updateEffects = useMemo(
@@ -99,9 +142,11 @@ export default function Model({ run, reduced, onReplay, onStatus }: Props) {
         if (material.emissiveMap) material.emissive.setRGB(1, 1, 1);
         material.emissiveIntensity = values[material.name];
       }
+      animation.arcStart.value = values.arcStart;
+      animation.arcEnd.value = values.arcEnd;
       if (animation.glow instanceof RectAreaLight)
         animation.glow.intensity =
-          // Blender와 웹 면광원의 근거리 반사 차이를 보정한다.
+          // 원본 출력은 유지하되 면광원의 근거리 반사 차이는 비교 렌더 기준으로 보정한다.
           (values.light * 0.25) /
           (Math.PI * animation.glow.width * animation.glow.height);
     },
@@ -110,47 +155,70 @@ export default function Model({ run, reduced, onReplay, onStatus }: Props) {
 
   useEffect(() => {
     animation.action.reset().play();
-    animation.mixer.setTime(reduced ? animation.duration : 0);
-    playback.current = {
-      elapsed: reduced ? animation.duration : 0,
-      playing: !reduced,
-    };
-    updateEffects(playback.current.elapsed);
-    onStatus(
-      reduced ? '동작 줄이기 설정으로 마지막 장면을 표시합니다.' : '재생 중'
-    );
+    const idleStart = (range.idleStart - 1) / range.fps;
+    // 동작 줄이기 전환 후에도 도구 등장 구간을 다시 재생하지 않는다.
+    if (reduced)
+      playback.current.elapsed = Math.max(playback.current.elapsed, idleStart);
+    const time = playbackTime(playback.current.elapsed, range, reduced);
+    animation.mixer.setTime(time);
+    playback.current.playing = enabled && !reduced;
+    updateEffects(time);
+    if (enabled)
+      onStatus(
+        reduced
+          ? '동작 줄이기 설정으로 마지막 장면을 표시합니다.'
+          : playback.current.elapsed >= idleStart
+            ? '재생 중 · 대기 동작 반복'
+            : '재생 중'
+      );
     invalidate();
     return () => {
       animation.mixer.stopAllAction();
     };
-  }, [animation, invalidate, onStatus, reduced, run, updateEffects]);
+  }, [animation, invalidate, onStatus, reduced, updateEffects, range, enabled]);
 
   useFrame((_, delta) => {
+    if (!reportedReady.current) {
+      reportedReady.current = true;
+      onReady();
+    }
     if (!playback.current.playing) return;
     // 탭을 다시 열 때 큰 시간 차이로 폭발 구간을 건너뛰지 않게 한다.
     const step = Math.min(delta, 0.1);
-    playback.current.elapsed = Math.min(
-      playback.current.elapsed + step,
-      animation.duration
-    );
-    animation.mixer.update(step);
-    updateEffects(playback.current.elapsed);
-    if (playback.current.elapsed >= animation.duration) {
-      playback.current.playing = false;
-      onStatus('재생 완료 · 마지막 자세를 유지하고 있습니다.');
-    } else {
-      invalidate();
+    const idleStart = (range.idleStart - 1) / range.fps;
+    const previous = playback.current.elapsed;
+    playback.current.elapsed += step;
+    const time = playbackTime(playback.current.elapsed, range);
+    animation.mixer.setTime(time);
+    updateEffects(time);
+    if (playback.current.elapsed >= idleStart) {
+      if (previous < idleStart) onStatus('재생 중 · 대기 동작 반복');
     }
+    invalidate();
   });
 
   return (
     <>
       <primitive
         object={gltf.scene}
-        onClick={(event: { delta: number }) => {
-          if (event.delta < 3 && !reduced) onReplay();
+        onClick={(event: { object: Object3D; stopPropagation: () => void }) => {
+          let object: Object3D | null = event.object;
+          while (object) {
+            if (object.userData.tool_id === 'image-converter') {
+              event.stopPropagation();
+              router.push('/image-compressor/');
+              return;
+            }
+            object = object.parent;
+          }
         }}
       />
+      {host && (
+        <ToolLabels
+          host={host}
+          tools={animation.toolRoots}
+        />
+      )}
     </>
   );
 }

@@ -14,3 +14,16 @@ export function sampleEffects(
     ])
   );
 }
+
+/** 도입부는 한 번 재생하고 Blender가 지정한 대기 구간만 반복한다. */
+export function playbackTime(
+  elapsed: number,
+  range: { fps: number; idleStart: number; idleEnd: number },
+  reduced = false
+) {
+  const start = (range.idleStart - 1) / range.fps;
+  const duration = (range.idleEnd - range.idleStart) / range.fps;
+  if (reduced) return start;
+  const time = Math.max(0, elapsed);
+  return time < start ? time : start + ((time - start) % duration);
+}

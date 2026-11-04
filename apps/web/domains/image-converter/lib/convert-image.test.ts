@@ -236,3 +236,100 @@ test.each(['image/jpeg', 'image/png'] as const)(
     expect(bitmap.close).toHaveBeenCalledOnce();
   }
 );
+
+test('원본 형식 압축은 확장자와 MIME이 아닌 파일 내용으로 인코더를 고른다', async () => {
+  const file = new File([await jpeg().arrayBuffer()], '위장.png', {
+    type: 'image/png',
+  });
+  const result = await convertImage(file, { ...options, format: 'original' });
+  expect(convertToBlob).toHaveBeenCalledWith({
+    type: 'image/jpeg',
+    quality: 0.8,
+  });
+  expect(result.name).toBe('위장.jpg');
+  expect(result.blob.type).toBe('image/jpeg');
+  expect(result.originalReturned).toBe(false);
+});
+
+test.each([12, 100])(
+  '원본 형식 압축 결과가 %iB로 줄지 않으면 원본 바이트를 그대로 제공한다',
+  async (size) => {
+    const file = jpeg();
+    convertToBlob.mockResolvedValue(
+      new Blob([new Uint8Array(size)], { type: 'image/jpeg' })
+    );
+    const result = await convertImage(file, { ...options, format: 'original' });
+    expect(result.originalReturned).toBe(true);
+    expect(await result.blob.arrayBuffer()).toEqual(await file.arrayBuffer());
+    expect(bitmap.close).toHaveBeenCalledOnce();
+  }
+);
+
+test('형식 변환이나 해상도 축소 요청은 용량이 늘어도 변환 결과를 유지한다', async () => {
+  const blob = new Blob([new Uint8Array(100)], { type: 'image/jpeg' });
+  convertToBlob.mockResolvedValue(blob);
+  for (const configuration of [
+    options,
+    { ...options, format: 'original' as const, maxDimension: 160 },
+  ]) {
+    const result = await convertImage(jpeg(), configuration);
+    expect(result.blob).toBe(blob);
+    expect(result.originalReturned).toBe(false);
+  }
+});
+
+test('원본보다 큰 긴 변을 설정해 실제 크기가 그대로면 용량 증가 시 원본을 유지한다', async () => {
+  const file = jpeg();
+  convertToBlob.mockResolvedValue(
+    new Blob([new Uint8Array(100)], { type: 'image/jpeg' })
+  );
+  const result = await convertImage(file, {
+    ...options,
+    format: 'original',
+    maxDimension: 1920,
+  });
+  expect([result.width, result.height]).toEqual([320, 180]);
+  expect(result.originalReturned).toBe(true);
+  expect(await result.blob.arrayBuffer()).toEqual(await file.arrayBuffer());
+});
+
+test.each([-1, 100, 1.5, NaN])(
+  '잘못된 용량 목표 %s는 원본을 디코딩하기 전에 거부한다',
+  async (targetReduction) => {
+    await expect(
+      convertImage(jpeg(), { ...options, format: 'original', targetReduction })
+    ).rejects.toThrow('0~99%');
+    expect(createImageBitmap).not.toHaveBeenCalled();
+  }
+);
+
+test('용량 70% 감소 목표는 품질 70으로 고정하지 않고 여러 품질의 실제 용량을 비교한다', async () => {
+  convertToBlob.mockImplementation(
+    async ({ type, quality }) =>
+      new Blob([new Uint8Array(Math.ceil(quality * 10))], { type })
+  );
+  const file = jpeg();
+  const result = await convertImage(file, {
+    ...options,
+    format: 'original',
+    targetReduction: 70,
+  });
+  expect(result.blob.size).toBeLessThanOrEqual(Math.floor(file.size * 0.3));
+  expect(convertToBlob.mock.calls.length).toBeGreaterThan(1);
+  expect(convertToBlob.mock.calls.length).toBeLessThanOrEqual(9);
+  expect(createImageBitmap).toHaveBeenCalledOnce();
+  expect(bitmap.close).toHaveBeenCalledOnce();
+  expect([result.width, result.height]).toEqual([320, 180]);
+});
+
+test('0% 감소 목표는 재인코딩 없이 원본 바이트를 제공한다', async () => {
+  const file = jpeg();
+  const result = await convertImage(file, {
+    ...options,
+    format: 'original',
+    targetReduction: 0,
+  });
+  expect(await result.blob.arrayBuffer()).toEqual(await file.arrayBuffer());
+  expect(result.originalReturned).toBe(true);
+  expect(convertToBlob).not.toHaveBeenCalled();
+});

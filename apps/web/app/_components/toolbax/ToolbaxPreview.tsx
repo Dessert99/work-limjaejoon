@@ -1,21 +1,30 @@
 'use client';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import * as styles from './preview.css';
-import Poster from './Poster';
-import Fallback from './Fallback';
+import LoadingScreen from './loading/LoadingScreen';
+import Fallback from './loading/Fallback';
 import SceneBoundary from './SceneBoundary';
+import useLoadingTransition from './loading/useLoadingTransition';
 
 const Scene = dynamic(() => import('./ToolbaxScene'), {
   ssr: false,
-  loading: Poster,
 });
 
-/** 진입 시 한 번 재생하고 버튼이나 가방 클릭으로 다시 재생한다. */
+/** 첫 진입 연출 뒤에는 가방의 대기 동작만 반복한다. */
 export default function ToolbaxPreview() {
-  const [run, setRun] = useState(0);
-  const [status, setStatus] = useState('불러오는 중');
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
   const [reduced, setReduced] = useState<boolean | null>(null);
+  const {
+    entered,
+    playbackReady,
+    failed,
+    finishLoading,
+    markReady,
+    markFailed,
+  } = useLoadingTransition(reduced);
+  const [status, setStatus] = useState('불러오는 중');
   useEffect(() => {
     const query = matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setReduced(query.matches);
@@ -23,40 +32,47 @@ export default function ToolbaxPreview() {
     query.addEventListener('change', update);
     return () => query.removeEventListener('change', update);
   }, []);
-  const replay = useCallback(() => setRun((value) => value + 1), []);
   const report = useCallback((value: string) => setStatus(value), []);
   return (
     <>
-      <div className={styles.header}>
-        <p className={styles.note}>
-          가방을 누르면 다시 재생됩니다. 드래그해서 다른 각도도 살펴보세요.
-        </p>
-        <button
-          className={styles.button}
-          onClick={replay}
-          disabled={reduced !== false || !status.startsWith('재생')}>
-          다시 재생
-        </button>
-      </div>
       <div
-        className={styles.stage}
-        aria-label='Toolbax 3D 미리보기'>
-        <SceneBoundary fallback={<Fallback onStatus={report} />}>
-          {reduced === null ? (
-            <Poster />
-          ) : (
+        className={entered || failed ? styles.stage : styles.preparingStage}
+        aria-label='Toolbax 작업방'
+        aria-hidden={!entered && !failed}>
+        <SceneBoundary fallback={<Fallback onError={markFailed} />}>
+          {reduced !== null && (
             <Scene
-              run={run}
+              enabled={playbackReady && !failed}
+              onReady={markReady}
+              host={host}
               reduced={reduced}
-              onReplay={replay}
               onStatus={report}
-              fallback={<Fallback onStatus={report} />}
             />
           )}
         </SceneBoundary>
+        <div
+          ref={setHost}
+          className={styles.labelHost}>
+          <div
+            className={styles.labels}
+            data-tool-labels>
+            <Link
+              href='/image-compressor/'
+              data-image-tool
+              className={`${styles.toolLabel} ${styles.toolLink}`}>
+              이미지 용량 줄이기
+            </Link>
+          </div>
+        </div>
       </div>
+      {!entered && !failed && (
+        <LoadingScreen
+          onFinished={finishLoading}
+          reduced={reduced}
+        />
+      )}
       <p
-        className={styles.note}
+        className={styles.srOnly}
         role='status'>
         {status}
       </p>
