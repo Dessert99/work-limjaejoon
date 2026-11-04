@@ -3,9 +3,10 @@ export type ImageFormat = 'image/jpeg' | 'image/png' | 'image/webp';
 
 /** 미리보기와 다운로드에 같은 변환 조건을 적용한다. */
 export type ConvertOptions = {
-  format: ImageFormat;
+  format: ImageFormat | 'original';
   quality: number;
   maxDimension: number | null;
+  targetReduction?: number;
 };
 
 /** 원본과 결과의 비교에 필요한 정보만 UI에 전달한다. */
