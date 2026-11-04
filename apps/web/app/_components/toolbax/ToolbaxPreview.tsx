@@ -1,5 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import * as styles from './preview.css';
 import LoadingScreen from './loading/LoadingScreen';
@@ -51,8 +52,18 @@ export default function ToolbaxPreview() {
         </SceneBoundary>
         <div
           ref={setHost}
-          className={styles.labelHost}
-        />
+          className={styles.labelHost}>
+          <div
+            className={styles.labels}
+            data-tool-labels>
+            <Link
+              href='/image-compressor/'
+              data-image-tool
+              className={`${styles.toolLabel} ${styles.toolLink}`}>
+              이미지 용량 줄이기
+            </Link>
+          </div>
+        </div>
       </div>
       {!entered && !failed && (
         <LoadingScreen

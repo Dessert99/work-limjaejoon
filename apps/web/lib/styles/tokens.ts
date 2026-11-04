@@ -20,3 +20,38 @@ export const colors = {
   loadingZipPull: '#565d65',
   loadingZipOutline: '#a5abb0',
 };
+
+/** 인화지 작업 화면과 가방 아이콘에 쓰는 색상과 서체다. */
+export const paperTheme = {
+  desk: '#d7cbb5',
+  ink: '#3d352c',
+  title: '#594631',
+  paper: '#fcf8eb',
+  photo: '#ebe4d4',
+  muted: '#93836a',
+  empty: '#a2957e',
+  tape: '#c5bb9899',
+  resultTape: '#b7956c77',
+  buttonTop: '#f4ecdb',
+  buttonBottom: '#d5c7ab',
+  buttonInk: '#51432f',
+  buttonInkEnd: '#75634b',
+  shadowRgb: '75, 55, 28',
+  heading: '"Toolbax Serif", serif',
+  buttonFont: 'Georgia, "Times New Roman", serif',
+  bodyFont:
+    '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif',
+  monoFont: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  iconSky: '#fff0db',
+  iconGround: '#767986',
+  iconKey: '#ffefd4',
+  iconFill: '#e0ebff',
+  settingsPaper: '#f3ead7',
+  settingsShadow: '#6c563018',
+  rangeFill: '#807052',
+  rangeTrack: '#c4b69c',
+  rangeInset: '#75604033',
+  rangeThumbBorder: '#b5a78e',
+  rangeThumbTop: '#fff9ed',
+  rangeThumbShadow: '#705c3c44',
+};

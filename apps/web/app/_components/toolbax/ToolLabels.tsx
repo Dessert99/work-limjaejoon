@@ -9,7 +9,7 @@ type Props = { host: HTMLDivElement; tools: Object3D[] };
 
 /** 기능명은 모델과 분리된 HTML로 표시하고 도구의 실제 화면 위치를 따라간다. */
 export default function ToolLabels({ host, tools }: Props) {
-  const labels = useRef<(HTMLSpanElement | null)[]>([]);
+  const labels = useRef<(HTMLElement | null)[]>([]);
   const point = useRef(new Vector3());
   const { camera, size } = useThree();
   useFrame(() => {
@@ -32,21 +32,29 @@ export default function ToolLabels({ host, tools }: Props) {
   }, 0);
   useEffect(() => {
     const container = document.createElement('div');
-    host.appendChild(container);
+    container.style.display = 'contents';
+    host.querySelector('[data-tool-labels]')!.appendChild(container);
+    const imageIndex = tools.findIndex(
+      (tool) => tool.userData.tool_id === 'image-converter'
+    );
+    if (imageIndex !== -1)
+      labels.current[imageIndex] = host.querySelector('[data-image-tool]');
     const root = createRoot(container);
     root.render(
-      <div className={styles.labels}>
-        {tools.map((tool, index) => (
-          <span
-            key={tool.name}
-            ref={(element) => {
-              labels.current[index] = element;
-            }}
-            className={styles.toolLabel}>
-            {tool.userData.tool_label}
-          </span>
-        ))}
-      </div>
+      <>
+        {tools.map((tool, index) =>
+          tool.userData.tool_id === 'image-converter' ? null : (
+            <span
+              key={tool.name}
+              ref={(element) => {
+                labels.current[index] = element;
+              }}
+              className={styles.toolLabel}>
+              {tool.userData.tool_label}
+            </span>
+          )
+        )}
+      </>
     );
     return () => {
       container.remove();

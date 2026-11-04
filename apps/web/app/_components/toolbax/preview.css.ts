@@ -85,3 +85,10 @@ export const toolLabel = style({
     },
   },
 });
+
+/** 정적 HTML의 도구 링크를 장면 위에서도 직접 선택할 수 있게 한다. */
+export const toolLink = style({
+  pointerEvents: 'auto',
+  textDecoration: 'none',
+  ':focus-visible': { outline: `2px solid ${colors.gold}`, outlineOffset: 3 },
+});

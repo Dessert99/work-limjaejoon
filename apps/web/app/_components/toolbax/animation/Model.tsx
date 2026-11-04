@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/immutability -- Three.js 객체는 프레임마다 직접 갱신하는 렌더링 상태다. */
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AnimationClip,
   AnimationMixer,
@@ -36,6 +37,7 @@ export default function Model({
   reduced,
   onStatus,
 }: Props) {
+  const router = useRouter();
   const gltf = useLoader(GLTFLoader, '/models/toolbax/scene.glb', (loader) =>
     loader.setMeshoptDecoder(MeshoptDecoder)
   );
@@ -197,7 +199,20 @@ export default function Model({
 
   return (
     <>
-      <primitive object={gltf.scene} />
+      <primitive
+        object={gltf.scene}
+        onClick={(event: { object: Object3D; stopPropagation: () => void }) => {
+          let object: Object3D | null = event.object;
+          while (object) {
+            if (object.userData.tool_id === 'image-converter') {
+              event.stopPropagation();
+              router.push('/image-compressor/');
+              return;
+            }
+            object = object.parent;
+          }
+        }}
+      />
       {host && (
         <ToolLabels
           host={host}
