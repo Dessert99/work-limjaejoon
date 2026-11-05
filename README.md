@@ -4,7 +4,7 @@ pnpm workspace의 `apps/web`에 Next.js App Router, React, TypeScript를 구성�
 
 현재 `/`는 Toolbax 3D 작업방이며 이미지 도구와 라벨을 누르면 `/image-compressor/`로 이동한다. 이미지 용량 줄이기 화면은 확정한 인화지 디자인과 단일 파일 선택·압축·다운로드를 제공한다. `+`를 누르면 이전 이미지와 정보를 지운 뒤 새 파일을 고른다. 선택을 취소하면 빈 상태로 남는다. 파일을 선택하면 Worker가 자동으로 압축하며 원본·결과와 실제 용량을 나란히 보여준다. Download는 완료 후 활성화되고 미리보기에 사용한 결과 파일을 그대로 저장한다. 좌측 가방을 누르면 작업방으로 돌아간다.
 
-제목과 메타데이터, 홈의 도구 링크는 정적 HTML로 생성한다. 현재 페이지는 공개 전 검증 단계로 `noindex`이며 공개할 때 해제하고 sitemap에 포함한다. 사용법·FAQ·관련 도구 목록은 사용자 요청으로 화면에 넣지 않는다. 다른 7개 도구 화면은 아직 구현하지 않았다.
+제목과 메타데이터, 홈의 도구 링크는 정적 HTML로 생성한다. 검색 유입은 도구 상세 페이지를 대상으로 하며 `/image-compressor/`는 색인을 허용하고 canonical을 `https://work.limjaejoon.com/image-compressor/`로 지정한다. 작업대 아래의 설명과 사용법도 정적 HTML에 포함한다. `apps/web/public/sitemap.xml`에는 구현한 도구 상세 페이지만 등록하고, `robots.txt`에서 이 sitemap을 알린다. 다른 7개 도구 화면은 아직 구현하지 않았으며 FAQ와 관련 도구 목록은 추가하지 않는다.
 
 이미지 도구는 최신 디자인 결정에 따라 JPG·PNG·WebP 한 장만 다루며 파일을 서버로 보내지 않는다. 원본 형식과 해상도를 유지한다. JPG·WebP는 이미지 업로드 후 하단 중앙에 용량 감소 목표 슬라이더(0~99%, 기본 70%)를 표시하며 Download는 오른쪽에 둔다. 빈 상태와 파일 선택 취소 후에는 슬라이더를 숨긴다. 예를 들어 70%는 원본 용량의 30% 이하를 목표로 하며, Worker에서 한 번 디코딩한 뒤 최대 9회 실제 인코딩으로 품질을 탐색한다. 목표에 도달하지 못하면 검사한 작은 결과와 미달 안내를 제공하며 목표율과 실제 감소율을 혼동하지 않는다. 0%는 원본 바이트를 그대로 제공한다. PNG는 기존 무손실 압축을 유지하고 목표 슬라이더를 제공하지 않는다. 이 화면은 해상도 조절 입력이 없다. 설정 변경 즉시 이전 Worker와 결과를 무효화하고 200ms 뒤 최신 목표만 처리한다. 원본 미리보기와 해상도는 유지하고 결과 용량·실제 절감률을 갱신한다. 새 파일을 고르면 목표는 기본값으로 돌아간다. 해상도가 그대로이고 용량도 줄지 않으면 원본 바이트를 유지한다. SVG·HEIC 등은 기존 변환기의 지원 범위 밖이며 안내를 표시한다. `+`를 누르면 이전 Worker를 종료하고 원본·결과 Object URL을 해제한다. 도메인의 ZIP 생성 기능은 유지하지만 이 화면에서는 사용하지 않는다.
 
@@ -37,6 +37,29 @@ pnpm preview
 `pnpm test`는 Vitest로 코드 옆의 `.test.ts` 파일을 실행한다. 웹 테스트만 실행하려면 `pnpm --filter @work/web test`, 변경 감지는 `pnpm --filter @work/web test:watch`를 사용한다. Node 환경에서 헤더 검사, 변환 옵션과 자원 해제, Worker 순차 처리, ZIP 내용을 검증하며 Canvas·Worker 경계는 mock으로 대체한다. 실제 브라우저의 코덱·다운로드·서버 미전송 검증은 포함하지 않는다. 테스트에 정적 빌드나 미리보기 서버는 필요하지 않다.
 
 정적 결과는 `apps/web/out`에 생성된다. 미리보기 주소는 `http://127.0.0.1:4173`이다. 서버 런타임 없이 정적 파일을 제공하며 `next start`는 사용하지 않는다.
+
+## 프론트 배포와 검색 노출
+
+프론트는 Cloudflare Pages에 정적 파일로 배포한다. 현재 도구는 API 없이 동작하므로 백엔드를 함께 배포할 필요가 없다. GitHub 자동 배포를 사용하려면 Cloudflare 대시보드의 Workers & Pages에서 Pages 프로젝트를 만들고 `Dessert99/work-limjaejoon` 저장소를 연결한다. Direct Upload로 만든 프로젝트는 나중에 Git 연동 방식으로 전환할 수 없으므로 처음부터 Git 연동을 선택한다.
+
+| 항목               | 값                              |
+| ------------------ | ------------------------------- |
+| 프로덕션 브랜치    | `main`                          |
+| 프레임워크 프리셋  | `Next.js (Static HTML Export)`  |
+| 루트 디렉터리      | 저장소 루트                     |
+| 빌드 명령          | `pnpm --filter @work/web build` |
+| 빌드 출력 디렉터리 | `apps/web/out`                  |
+| Node.js            | 루트 `.node-version`의 22 버전  |
+| 환경변수           | `PNPM_VERSION=10.33.0`          |
+| 사용자 지정 도메인 | `work.limjaejoon.com`           |
+
+첫 배포 후 Pages 프로젝트의 Custom domains에서 도메인을 연결하고 안내되는 DNS 설정을 적용한다. 이후 `main`에 push하면 자동으로 빌드하고 배포한다. 로컬 변경은 커밋과 push 전까지 원격 배포에 반영되지 않는다.
+
+배포 전 `pnpm --filter @work/web check`와 `pnpm --filter @work/web build`를 실행한다. 배포 후 `/image-compressor/` 직접 접속과 새로고침, 이미지 압축·다운로드, `/robots.txt`, `/sitemap.xml`을 확인한다. 상세 페이지의 canonical이 운영 주소인지, HTML과 응답 헤더에 `noindex`가 없는지 확인한다. Cloudflare의 미리보기 배포는 기본 `X-Robots-Tag: noindex`를 유지한다. 운영용 `pages.dev` 주소는 사용자 지정 도메인이 정상 연결된 뒤 Cloudflare Bulk Redirects로 운영 도메인에 연결한다.
+
+Google Search Console에서 운영 도메인 소유권을 확인하고 `https://work.limjaejoon.com/sitemap.xml`을 제출한다. sitemap 제출은 검색 색인이나 순위를 보장하지 않는다. 새 도구를 공개할 때는 그 도구의 정적 설명·메타데이터·canonical을 작성하고 `apps/web/public/sitemap.xml`에 URL을 추가한다. 메인 페이지는 sitemap에 포함하지 않으며 기존 3D 작업방을 유지한다.
+
+공식 안내: [Next.js 정적 배포](https://developers.cloudflare.com/pages/framework-guides/nextjs/deploy-a-static-nextjs-site/), [빌드 버전 설정](https://developers.cloudflare.com/pages/configuration/build-image/), [미리보기 검색 차단](https://developers.cloudflare.com/pages/configuration/preview-deployments/).
 
 ## 로컬 API 실행
 

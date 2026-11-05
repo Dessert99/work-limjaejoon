@@ -23,6 +23,14 @@ export const page = style({
     'repeating-linear-gradient(0deg,#ffffff08 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,#57472e06 0 1px,transparent 1px 3px)',
 });
 globalStyle(`${page}, ${page} *`, { boxSizing: 'border-box' });
+/** 검색으로 방문한 사용자도 작업대 아래에서 처리 방식과 사용법을 읽을 수 있다. */
+export const guide = style({
+  maxWidth: 800,
+  margin: '48px auto',
+  padding: '0 24px',
+  lineHeight: 1.8,
+  overflowWrap: 'anywhere',
+});
 /** 가운데 제목의 위치는 가방 너비와 독립적이다. */
 export const brand = style({
   height: 122,
