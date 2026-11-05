@@ -44,18 +44,6 @@ export const labels = style({
   position: 'absolute',
   inset: 0,
   pointerEvents: 'none',
-  '@media': {
-    '(max-width: 600px)': {
-      top: 'auto',
-      bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 68px))',
-      left: 16,
-      right: 16,
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 8,
-      paddingTop: 16,
-    },
-  },
 });
 /** 장면과 HTML의 좌표계를 맞춘다. */
 export const labelHost = style({
@@ -69,25 +57,25 @@ export const toolLabel = style({
   top: 0,
   left: 0,
   opacity: 0,
-  whiteSpace: 'nowrap',
+  width: 'max-content',
+  maxWidth: 88,
+  whiteSpace: 'normal',
+  wordBreak: 'keep-all',
+  overflowWrap: 'normal',
+  textAlign: 'center',
   color: '#fff',
   fontSize: 13,
+  fontWeight: 400,
+  lineHeight: 1.35,
   textShadow: '0 1px 4px #000',
   padding: '3px 6px',
   background: 'rgba(15, 23, 40, 0.65)',
   borderRadius: 6,
-  '@media': {
-    '(max-width: 600px)': {
-      fontSize: 12,
-      padding: '6px 8px',
-      position: 'static',
-      textAlign: 'center',
-    },
-  },
 });
 
 /** 정적 HTML의 도구 링크를 장면 위에서도 직접 선택할 수 있게 한다. */
 export const toolLink = style({
+  cursor: 'pointer',
   pointerEvents: 'auto',
   textDecoration: 'none',
   ':focus-visible': { outline: `2px solid ${colors.gold}`, outlineOffset: 3 },

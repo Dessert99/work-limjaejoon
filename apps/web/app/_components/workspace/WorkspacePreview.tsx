@@ -8,12 +8,12 @@ import Fallback from './loading/Fallback';
 import SceneBoundary from './SceneBoundary';
 import useLoadingTransition from './loading/useLoadingTransition';
 
-const Scene = dynamic(() => import('./ToolbaxScene'), {
+const Scene = dynamic(() => import('./WorkspaceScene'), {
   ssr: false,
 });
 
 /** 첫 진입 연출 뒤에는 가방의 대기 동작만 반복한다. */
-export default function ToolbaxPreview() {
+export default function WorkspacePreview() {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const [reduced, setReduced] = useState<boolean | null>(null);
   const {
@@ -37,7 +37,7 @@ export default function ToolbaxPreview() {
     <>
       <div
         className={entered || failed ? styles.stage : styles.preparingStage}
-        aria-label='Toolbax 작업방'
+        aria-label='작업방'
         aria-hidden={!entered && !failed}>
         <SceneBoundary fallback={<Fallback onError={markFailed} />}>
           {reduced !== null && (

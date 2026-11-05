@@ -7,6 +7,10 @@ export type SceneView = {
   worldColor: [number, number, number];
   worldStrength: number;
   exposure: number;
+  introPosition: [number, number, number];
+  introTarget: [number, number, number];
+  moveStart: number;
+  moveEnd: number;
 };
 
 /** 폭발 이후 반복할 원본 프레임 구간이다. */

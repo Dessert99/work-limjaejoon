@@ -46,7 +46,7 @@
 - domain은 Next.js를 모른다. `next/*`, 라우팅, 화면 컴포넌트를 가져오지 않는다. `ui/`는 쿼리 실행이나 주소 읽기를 하지 않는다.
 - `image-converter/lib/`에 브라우저 처리와 Worker 진입점 및 실행 함수를 둔다. 브라우저 API 의존은 허용하며 Next.js와 분리한다. 입력 이미지와 글은 서버로 보내지 않는다.
 - `image-converter/model/`은 변환 옵션, 결과, Worker 메시지 계약을 가진다. 서버 통신용 스키마 라이브러리는 아직 없다.
-- `toolbax/lib/`는 자산에서 가져온 재생 데이터 계산을 담당한다. Canvas, 카메라, 로딩, 재생 버튼은 화면 부품이다.
+- `workspace/lib/`는 자산에서 가져온 재생 데이터 계산을 담당한다. Canvas, 카메라, 로딩, 재생 버튼은 화면 부품이다.
 - 서버 요청 함수는 응답을 경계에서 검증한다. 쿼리 도구를 도입하면 domain마다 팩토리 하나를 두고 데이터 조건은 팩토리, 화면 오류 정책은 사용처에서 정한다.
 
 ## 화면과 파일 모양
@@ -55,7 +55,7 @@
 - `layout.tsx`는 하위 화면의 공통 틀을 담당한다. Client Component는 상호작용과 브라우저 API 경계에만 둔다.
 - 오류와 없음 화면을 구현할 때 layout 경계에 `error.tsx`, `not-found.tsx`를 두고 같은 모양은 상위 경계에서 재사용한다. 현재 구조 변경만으로 미정인 오류 UI를 추가하지 않는다.
 - `output: 'export'`와 webpack 빌드를 유지한다. 런타임 SSR, Route Handler, Server Action을 추가하지 않는다.
-- 화면 부품은 `_components/` 아래에 두고 딸린 파일이 있는 영역만 한 단계 하위 폴더로 묶는다. 현재는 `app/_components/toolbax/`다.
+- 화면 부품은 `_components/` 아래에 두고 딸린 파일이 있는 영역만 한 단계 하위 폴더로 묶는다. 현재는 `app/_components/workspace/`다.
 - 한 파일에 컴포넌트 하나만 둔다. 이름과 파일명은 일치시킨다. App Router 예약 파일명은 예외다.
 - JSX를 반환하는 함수는 컴포넌트다. `renderRow()` 같은 일반 함수에 JSX를 숨기지 않는다. `map`과 라이브러리 콜백 안의 인라인 JSX는 허용한다.
 - 파일 전용 타입과 상수는 export하지 않는다. 테스트는 소스 옆에 둔다.

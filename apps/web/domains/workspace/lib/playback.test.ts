@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { playbackTime, sampleEffects } from './playback';
+import { cameraProgress, playbackTime, sampleEffects } from './playback';
+
+it('카메라는 폭발까지 기다리고 빠르게 후퇴한 뒤 대기 반복 중에도 최종 구도를 유지한다', () => {
+  const start = 39;
+  const end = 44;
+  expect(cameraProgress(0, 24, start, end)).toBe(0);
+  expect(cameraProgress((start - 1) / 24, 24, start, end)).toBe(0);
+  expect(
+    cameraProgress(((start + end) / 2 - 1) / 24, 24, start, end)
+  ).toBeCloseTo(0.875);
+  expect(cameraProgress((end - 1) / 24, 24, start, end)).toBe(1);
+  expect(
+    cameraProgress(
+      playbackTime(100, { fps: 24, idleStart: 49, idleEnd: 241 }),
+      24,
+      start,
+      end
+    )
+  ).toBe(1);
+});
 
 describe('발광 타이밍', () => {
   const frames = [{ light: 0 }, { light: 100 }, { light: 3 }];

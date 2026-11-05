@@ -21,10 +21,10 @@ try {
         body: request.postData(),
       });
   });
-  const base = process.env.TOOLBAX_PREVIEW_URL || 'http://127.0.0.1:4173';
+  const base = process.env.WORKSPACE_PREVIEW_URL || 'http://127.0.0.1:4173';
   await page.goto(`${base}/image-compressor/`);
   const add = page.getByRole('button', {
-    name: '현재 이미지를 지우고 새 이미지 선택',
+    name: /이미지 한 장 선택/,
   });
   const download = page.getByRole('button', {
     name: '현재 이미지 결과 다운로드',
@@ -126,7 +126,7 @@ try {
         })
       );
       await page.screenshot({
-        path: '/tmp/toolbax-compression.png',
+        path: '/tmp/workspace-compression.png',
         fullPage: true,
       });
     }
@@ -159,7 +159,7 @@ try {
       await page.setViewportSize({ width: 1440, height: 1000 });
       assert(bytes.length <= Math.floor(input.length * 0.3));
       await page.screenshot({
-        path: `/tmp/toolbax-target-${extension}.png`,
+        path: `/tmp/workspace-target-${extension}.png`,
         fullPage: true,
       });
       await slider.press('Home');

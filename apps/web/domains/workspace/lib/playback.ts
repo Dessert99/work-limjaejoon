@@ -1,3 +1,17 @@
+/** 원본 폭발 구간에 맞춰 카메라를 빠르게 후퇴시키고 마지막 구도를 유지한다. */
+export function cameraProgress(
+  time: number,
+  fps: number,
+  start: number,
+  end: number
+) {
+  const progress = Math.max(
+    0,
+    Math.min(1, (time * fps + 1 - start) / (end - start))
+  );
+  return 1 - (1 - progress) ** 3;
+}
+
 /** Blender의 프레임별 발광 샘플을 연속 재생 시간에 맞춰 읽는다. */
 export function sampleEffects(
   frames: Record<string, number>[],

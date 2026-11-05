@@ -20,7 +20,11 @@ export default function ImageSettings({
   return (
     <div className={styles.settings}>
       {lossless ? (
-        <span className={styles.lossless}>PNG · 무손실 압축</span>
+        <span className={styles.lossless}>
+          PNG · 무손실 압축
+          <br />
+          PNG는 화질 손실 없이 압축하며, 압축률 조절은 지원하지 않습니다.
+        </span>
       ) : (
         <label className={styles.targetField}>
           <span className={styles.targetHeading}>

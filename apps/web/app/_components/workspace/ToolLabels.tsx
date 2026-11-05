@@ -24,10 +24,7 @@ export default function ToolLabels({ host, tools }: Props) {
       const shown =
         tool.scale.x > 0.5 && point.current.z > -1 && point.current.z < 1;
       label.style.opacity = shown ? '1' : '0';
-      label.style.transform =
-        size.width < 600
-          ? 'none'
-          : `translate(-50%, 0) translate(${((point.current.x + 1) * size.width) / 2}px, ${((1 - point.current.y) * size.height) / 2 + 8}px)`;
+      label.style.transform = `translate(-50%, 0) translate(${((point.current.x + 1) * size.width) / 2}px, ${((1 - point.current.y) * size.height) / 2 + 8}px)`;
     });
   }, 0);
   useEffect(() => {

@@ -174,14 +174,18 @@ export default function ImageWorkspace() {
     <div className={styles.desk}>
       <div className={styles.toolbar}>
         <PressButton
-          round
-          aria-label='현재 이미지를 지우고 새 이미지 선택'
+          aria-label={
+            preview
+              ? '현재 이미지를 지우고 새 이미지 한 장 선택'
+              : '이미지 한 장 선택'
+          }
           onClick={() => {
             reset();
             picker.current?.click();
           }}>
-          +
+          <span aria-hidden='true'>＋ </span>이미지 한 장 선택
         </PressButton>
+        <span className={styles.formats}>JPG · PNG · WebP</span>
         <input
           ref={picker}
           type='file'
@@ -212,12 +216,18 @@ export default function ImageWorkspace() {
             )}
           </div>
           <figcaption className={styles.caption}>
-            <span className={styles.captionLabel}>원본</span>
-            <strong className={styles.fileName}>
-              {preview?.name || '이미지 없음'}
+            <div className={styles.captionHeader}>
+              <span className={styles.captionLabel}>원본 이미지</span>
+              <span
+                className={styles.fileName}
+                title={preview?.name}>
+                {preview?.name || '이미지 없음'}
+              </span>
+            </div>
+            <strong className={styles.resultSize}>
+              {preview?.size || '선택 전'}
             </strong>
             <span className={styles.facts}>
-              <span>{preview?.size}</span>
               <span>{preview?.dimensions}</span>
             </span>
           </figcaption>
@@ -241,7 +251,14 @@ export default function ImageWorkspace() {
             )}
           </div>
           <figcaption className={styles.caption}>
-            <span className={styles.captionLabel}>결과</span>
+            <div className={styles.captionHeader}>
+              <span className={styles.captionLabel}>압축한 이미지</span>
+              <span
+                className={styles.fileName}
+                title={result?.name}>
+                {result?.name || '결과 없음'}
+              </span>
+            </div>
             {result && (
               <>
                 <strong className={styles.resultSize}>{result.size}</strong>
@@ -277,7 +294,7 @@ export default function ImageWorkspace() {
             disabled={!result || processing}
             aria-label='현재 이미지 결과 다운로드'
             onClick={download}>
-            Download
+            다운로드
           </PressButton>
         </div>
         <p

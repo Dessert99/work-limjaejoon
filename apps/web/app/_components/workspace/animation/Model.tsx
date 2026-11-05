@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/immutability -- Three.js 객체는 프레임마다 직접 갱신하는 렌더링 상태다. */
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
+import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AnimationClip,
@@ -16,10 +17,10 @@ import {
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-import { playbackTime, sampleEffects } from '@/domains/toolbax/lib/playback';
+import { playbackTime, sampleEffects } from '@/domains/workspace/lib/playback';
 
 import ToolLabels from '../ToolLabels';
-import type { PlaybackRange } from '@/domains/toolbax/model/scene';
+import type { PlaybackRange } from '@/domains/workspace/model/scene';
 
 type Props = {
   enabled: boolean;
@@ -27,6 +28,7 @@ type Props = {
   host: HTMLDivElement | null;
   reduced: boolean;
   onStatus: (status: string) => void;
+  timeline: RefObject<number>;
 };
 
 /** 자산의 애니메이션과 효과 데이터를 함께 재생한다. */
@@ -36,14 +38,15 @@ export default function Model({
   host,
   reduced,
   onStatus,
+  timeline,
 }: Props) {
   const router = useRouter();
-  const gltf = useLoader(GLTFLoader, '/models/toolbax/scene.glb', (loader) =>
+  const gltf = useLoader(GLTFLoader, '/models/workspace/scene.glb', (loader) =>
     loader.setMeshoptDecoder(MeshoptDecoder)
   );
   const effects = useMemo(() => {
     const data = gltf.scene.getObjectByName('Backpack_Motion')!.userData
-      .toolbax_effects as { fps: number; tracks: Record<string, number[]> };
+      .workspace_effects as { fps: number; tracks: Record<string, number[]> };
     return {
       fps: data.fps,
       frames: Array.from({ length: data.tracks.light.length }, (_, index) =>
@@ -57,8 +60,8 @@ export default function Model({
     };
   }, [gltf]);
   const range = gltf.scene.getObjectByName('Backpack_Motion')!.userData
-    .toolbax_playback as PlaybackRange;
-  const { invalidate } = useThree();
+    .workspace_playback as PlaybackRange;
+  const { invalidate, gl } = useThree();
 
   const reportedReady = useRef(false);
   const playback = useRef({ elapsed: 0, playing: false });
@@ -66,11 +69,11 @@ export default function Model({
     RectAreaLightUniformsLib.init();
     const sources: SpotLight[] = [];
     gltf.scene.traverse((object) => {
-      if (object instanceof SpotLight && object.userData.toolbax_area_light)
+      if (object instanceof SpotLight && object.userData.workspace_area_light)
         sources.push(object);
     });
     for (const source of sources) {
-      const { width, height, power } = source.userData.toolbax_area_light;
+      const { width, height, power } = source.userData.workspace_area_light;
       // GLB에 기록된 면적과 출력을 사용하며 원형 광원은 같은 면적의 사각형으로 근사한다.
       const area = new RectAreaLight(
         source.color,
@@ -91,7 +94,7 @@ export default function Model({
     const tracks = gltf.animations.flatMap((clip) =>
       clip.tracks.map((track) => track.clone())
     );
-    const clip = new AnimationClip('Toolbax_Burst', -1, tracks);
+    const clip = new AnimationClip('Workspace_Burst', -1, tracks);
     const action = mixer.clipAction(clip);
     action.setLoop(LoopOnce, 1);
     action.clampWhenFinished = true;
@@ -160,6 +163,7 @@ export default function Model({
     if (reduced)
       playback.current.elapsed = Math.max(playback.current.elapsed, idleStart);
     const time = playbackTime(playback.current.elapsed, range, reduced);
+    timeline.current = time;
     animation.mixer.setTime(time);
     playback.current.playing = enabled && !reduced;
     updateEffects(time);
@@ -175,7 +179,23 @@ export default function Model({
     return () => {
       animation.mixer.stopAllAction();
     };
-  }, [animation, invalidate, onStatus, reduced, updateEffects, range, enabled]);
+  }, [
+    animation,
+    invalidate,
+    onStatus,
+    reduced,
+    updateEffects,
+    range,
+    enabled,
+    timeline,
+  ]);
+
+  useEffect(
+    () => () => {
+      gl.domElement.style.cursor = '';
+    },
+    [gl]
+  );
 
   useFrame((_, delta) => {
     if (!reportedReady.current) {
@@ -189,6 +209,7 @@ export default function Model({
     const previous = playback.current.elapsed;
     playback.current.elapsed += step;
     const time = playbackTime(playback.current.elapsed, range);
+    timeline.current = time;
     animation.mixer.setTime(time);
     updateEffects(time);
     if (playback.current.elapsed >= idleStart) {
@@ -201,6 +222,20 @@ export default function Model({
     <>
       <primitive
         object={gltf.scene}
+        onPointerMove={(event: {
+          object: Object3D;
+          stopPropagation: () => void;
+        }) => {
+          let object: Object3D | null = event.object;
+          while (object && object.userData.tool_id !== 'image-converter')
+            object = object.parent;
+          // 뒤쪽 벽의 교차 이벤트가 도구의 손 모양 커서를 덮어쓰지 않게 한다.
+          if (object) event.stopPropagation();
+          gl.domElement.style.cursor = object ? 'pointer' : '';
+        }}
+        onPointerOut={() => {
+          gl.domElement.style.cursor = '';
+        }}
         onClick={(event: { object: Object3D; stopPropagation: () => void }) => {
           let object: Object3D | null = event.object;
           while (object) {

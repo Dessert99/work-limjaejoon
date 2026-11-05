@@ -9,14 +9,14 @@ from mathutils import Vector
 # 원본은 보존하고 임시 내보내기 상태만 베이크한 뒤 원본으로 복귀한다.
 source = bpy.data.filepath
 root = os.path.dirname(os.path.dirname(os.path.dirname(source)))
-output = os.path.join(root, 'apps/web/public/models/toolbax')
-scene = bpy.data.scenes['Toolbax_Moonlit_Room']
+output = os.path.join(root, 'apps/web/public/models/workspace')
+scene = bpy.data.scenes['Workspace_Moonlit_Room']
 bpy.context.window.scene = scene
 if bpy.context.screen.is_animation_playing:
     bpy.ops.screen.animation_cancel(restore_frame=False)
 bpy.ops.wm.save_as_mainfile(filepath=source)
 objects = [o for o in scene.objects if o.type != 'CAMERA' and not o.hide_render and not o.hide_viewport]
-frames = range(1, 289)
+frames = range(scene.frame_start, scene.frame_end + 1)
 samples = {o.name: [] for o in objects}
 effects = []
 asset = bpy.data.objects['Backpack_Motion']
@@ -53,21 +53,28 @@ try:
         values['arcStart'] = arc.data.bevel_factor_start
         values['arcEnd'] = arc.data.bevel_factor_end
         effects.append(values)
-    scene.frame_set(96)
+    scene.frame_set(int(asset['idle_start_frame']))
     camera = scene.camera
     direction = camera.rotation_euler.to_matrix() @ Vector((0, 0, -1))
     target = camera.location + direction * ((2.25 - camera.location.z) / direction.z)
     background = next(n for n in scene.world.node_tree.nodes if n.type == 'BACKGROUND')
-    asset['toolbax_view'] = {
+    asset['workspace_view'] = {
         'position': web_vector(camera.location), 'target': web_vector(target),
-        'aspect': scene.render.resolution_x / scene.render.resolution_y,
+        'aspect': asset['camera_aspect'],
         'fov': math.degrees(2 * math.atan(camera.data.sensor_width / (2 * camera.data.lens * scene.render.resolution_x / scene.render.resolution_y))),
         'worldColor': list(background.inputs['Color'].default_value)[:3],
         'worldStrength': background.inputs['Strength'].default_value,
         'exposure': scene.view_settings.exposure,
+        'introPosition': list(asset['camera_start_position']),
+        'introTarget': list(asset['camera_start_target']),
+        'moveStart': asset['camera_move_start_frame'],
+        'moveEnd': asset['camera_move_end_frame'],
     }
-    asset['toolbax_playback'] = {'fps': scene.render.fps, 'idleStart': 96, 'idleEnd': 288}
-    asset['toolbax_effects'] = {'fps': scene.render.fps, 'tracks': {name: [f[name] for f in effects] for name in effects[0]}}
+    asset['workspace_view']['position'] = list(asset['camera_end_position'])
+    asset['workspace_view']['target'] = list(asset['camera_end_target'])
+    asset['workspace_view']['fov'] = asset['camera_fov']
+    asset['workspace_playback'] = {'fps': scene.render.fps, 'idleStart': asset['idle_start_frame'], 'idleEnd': asset['idle_end_frame']}
+    asset['workspace_effects'] = {'fps': scene.render.fps, 'tracks': {name: [f[name] for f in effects] for name in effects[0]}}
     # 면광원은 위치와 출력까지 자산에 기록해 웹에서 복원한다.
     for light in [o for o in objects if o.type == 'LIGHT']:
         data = light.data
@@ -75,7 +82,7 @@ try:
             continue
         width = data.size * math.sqrt(math.pi) / 2 if data.shape == 'DISK' else data.size
         height = width if data.shape in {'DISK', 'SQUARE'} else data.size_y
-        light['toolbax_area_light'] = {'width': width, 'height': height, 'power': data.energy, 'shape': data.shape, 'color': list(data.color)}
+        light['workspace_area_light'] = {'width': width, 'height': height, 'power': data.energy, 'shape': data.shape, 'color': list(data.color)}
         proxy = bpy.data.lights.new(light.name + '_GLTF', 'SPOT')
         proxy.color = data.color
         proxy.energy = data.energy / math.pi
@@ -105,7 +112,7 @@ try:
     replacement = bpy.data.objects.new(arc.name + '_Export', mesh)
     replacement.parent = arc.parent
     replacement.matrix_local = arc.matrix_local.copy()
-    replacement['toolbax_arc'] = True
+    replacement['workspace_arc'] = True
     for collection in arc.users_collection:
         collection.objects.link(replacement)
     name = arc.name
@@ -196,16 +203,16 @@ try:
     for material in animated_materials:
         material.node_tree.animation_data_clear()
         shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-        shader.inputs['Emission Strength'].default_value = effects[77][material.name]
-    export_collection = bpy.data.collections['Toolbax']
+        shader.inputs['Emission Strength'].default_value = effects[int(asset['camera_move_start_frame']) - 1][material.name]
+    export_collection = bpy.data.collections['Workspace']
     for o in objects:
         if o.name not in export_collection.all_objects:
             export_collection.objects.link(o)
     scene.frame_start = 1
-    scene.frame_end = 288
-    scene.frame_set(96)
+    scene.frame_end = frames.stop - 1
+    scene.frame_set(int(asset['idle_start_frame']))
     bpy.ops.export_scene.gltf(
-        filepath=raw_path, export_format='GLB', collection='Toolbax', use_active_collection_with_nested=True,
+        filepath=raw_path, export_format='GLB', collection='Workspace', use_active_collection_with_nested=True,
         export_extras=True, export_cameras=False, export_lights=True, export_import_convert_lighting_mode='RAW',
         export_apply=False, export_animations=True, export_animation_mode='SCENE',
         export_frame_range=True, export_frame_step=1, export_force_sampling=True,
@@ -228,6 +235,6 @@ try:
         stream.write(struct.pack('<II', len(encoded), 0x4E4F534A))
         stream.write(encoded)
         stream.write(tail)
-    print('방, 도구 6개, 288프레임, 나선 경로 및 조명 메타데이터 내보내기 완료')
+    print(f'방, 도구 6개, {len(frames)}프레임, 나선 경로 및 조명 메타데이터 내보내기 완료')
 finally:
     bpy.ops.wm.open_mainfile(filepath=source)

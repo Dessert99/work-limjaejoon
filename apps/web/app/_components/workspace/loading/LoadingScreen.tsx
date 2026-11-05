@@ -12,7 +12,7 @@ export default function LoadingScreen({ onFinished, reduced }: Props) {
   useEffect(() => {
     if (reduced === null) return;
     if (reduced) {
-      const timer = window.setTimeout(onFinished, 3000);
+      const timer = window.setTimeout(onFinished, 1250);
       return () => window.clearTimeout(timer);
     }
     let previous = performance.now();
@@ -21,7 +21,7 @@ export default function LoadingScreen({ onFinished, reduced }: Props) {
       // GLB 처리로 멈춘 시간을 한꺼번에 더하면 지퍼가 중간에서 끝으로 건너뛴다.
       const step = document.hidden ? 0 : Math.min(now - previous, 50);
       previous = now;
-      current.current = Math.min(1, current.current + step / 3000);
+      current.current = Math.min(1, current.current + step / 1250);
       setProgress(current.current);
       if (current.current < 1) frame = requestAnimationFrame(tick);
     };
