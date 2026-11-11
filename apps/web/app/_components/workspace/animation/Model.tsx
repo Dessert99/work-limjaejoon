@@ -17,6 +17,7 @@ import {
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { findToolRoute } from '@/domains/workspace/config/tool-routes';
 import { playbackTime, sampleEffects } from '@/domains/workspace/lib/playback';
 
 import ToolLabels from '../ToolLabels';
@@ -227,7 +228,7 @@ export default function Model({
           stopPropagation: () => void;
         }) => {
           let object: Object3D | null = event.object;
-          while (object && object.userData.tool_id !== 'image-converter')
+          while (object && !findToolRoute(object.userData.tool_id))
             object = object.parent;
           // 뒤쪽 벽의 교차 이벤트가 도구의 손 모양 커서를 덮어쓰지 않게 한다.
           if (object) event.stopPropagation();
@@ -239,9 +240,10 @@ export default function Model({
         onClick={(event: { object: Object3D; stopPropagation: () => void }) => {
           let object: Object3D | null = event.object;
           while (object) {
-            if (object.userData.tool_id === 'image-converter') {
+            const route = findToolRoute(object.userData.tool_id);
+            if (route) {
               event.stopPropagation();
-              router.push('/image-compressor/');
+              router.push(route.href);
               return;
             }
             object = object.parent;

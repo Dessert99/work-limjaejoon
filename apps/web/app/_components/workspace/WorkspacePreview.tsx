@@ -1,5 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
+import { findToolRoute } from '@/domains/workspace/config/tool-routes';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import * as styles from './preview.css';
@@ -7,6 +8,8 @@ import LoadingScreen from './loading/LoadingScreen';
 import Fallback from './loading/Fallback';
 import SceneBoundary from './SceneBoundary';
 import useLoadingTransition from './loading/useLoadingTransition';
+
+const imageTool = findToolRoute('image-converter')!;
 
 const Scene = dynamic(() => import('./WorkspaceScene'), {
   ssr: false,
@@ -57,10 +60,11 @@ export default function WorkspacePreview() {
             className={styles.labels}
             data-tool-labels>
             <Link
-              href='/image-compressor/'
+              href={imageTool.href}
+              prefetch={false}
               data-image-tool
               className={`${styles.toolLabel} ${styles.toolLink}`}>
-              이미지 용량 줄이기
+              {imageTool.label}
             </Link>
           </div>
         </div>

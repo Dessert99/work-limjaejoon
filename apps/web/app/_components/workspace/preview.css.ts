@@ -9,8 +9,10 @@ globalStyle('body', {
 });
 globalStyle('*', { boxSizing: 'border-box' });
 
-/** 방이 브라우저의 전체 화면을 차지하게 한다. */
-export const page = style({
+/** 장면 아래에도 도구 목록이 이어지게 한다. */
+export const page = style({ width: '100%', minHeight: '100svh' });
+/** 장면의 좌표계와 로딩 화면은 첫 화면 크기로 유지한다. */
+export const sceneViewport = style({
   width: '100%',
   height: '100svh',
   position: 'relative',
@@ -79,4 +81,38 @@ export const toolLink = style({
   pointerEvents: 'auto',
   textDecoration: 'none',
   ':focus-visible': { outline: `2px solid ${colors.gold}`, outlineOffset: 3 },
+});
+
+/** WebGL 사용 여부와 무관하게 정적 도구 탐색을 제공한다. */
+export const toolDirectory = style({
+  maxWidth: 1120,
+  margin: '0 auto',
+  padding: '36px 24px 64px',
+});
+/** 도구 목록은 화면 폭에 맞춰 열 수를 줄인다. */
+export const toolList = style({
+  listStyle: 'none',
+  padding: 0,
+  margin: '24px 0 0',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: 16,
+});
+/** 링크 전체를 클릭할 수 있고 키보드 포커스를 선명하게 표시한다. */
+export const directoryLink = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  height: '100%',
+  padding: 20,
+  border: `1px solid ${colors.muted}`,
+  borderRadius: 8,
+  color: colors.foreground,
+  textDecoration: 'none',
+  lineHeight: 1.6,
+  ':hover': { textDecoration: 'underline', textUnderlineOffset: 4 },
+  ':focus-visible': {
+    outline: `3px solid ${colors.foreground}`,
+    outlineOffset: 3,
+  },
 });

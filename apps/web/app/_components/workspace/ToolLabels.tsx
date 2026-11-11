@@ -1,5 +1,7 @@
 'use client';
 import { useFrame, useThree } from '@react-three/fiber';
+import Link from 'next/link';
+import { findToolRoute } from '@/domains/workspace/config/tool-routes';
 import { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Object3D, Vector3 } from 'three';
@@ -24,6 +26,7 @@ export default function ToolLabels({ host, tools }: Props) {
       const shown =
         tool.scale.x > 0.5 && point.current.z > -1 && point.current.z < 1;
       label.style.opacity = shown ? '1' : '0';
+      label.style.visibility = shown ? 'visible' : 'hidden';
       label.style.transform = `translate(-50%, 0) translate(${((point.current.x + 1) * size.width) / 2}px, ${((1 - point.current.y) * size.height) / 2 + 8}px)`;
     });
   }, 0);
@@ -39,18 +42,23 @@ export default function ToolLabels({ host, tools }: Props) {
     const root = createRoot(container);
     root.render(
       <>
-        {tools.map((tool, index) =>
-          tool.userData.tool_id === 'image-converter' ? null : (
-            <span
+        {tools.map((tool, index) => {
+          const route = findToolRoute(tool.userData.tool_id);
+          if (!route || tool.userData.tool_id === 'image-converter')
+            return null;
+          return (
+            <Link
               key={tool.name}
+              href={route.href}
+              prefetch={false}
               ref={(element) => {
                 labels.current[index] = element;
               }}
-              className={styles.toolLabel}>
-              {tool.userData.tool_label}
-            </span>
-          )
-        )}
+              className={`${styles.toolLabel} ${styles.toolLink}`}>
+              {route.label}
+            </Link>
+          );
+        })}
       </>
     );
     return () => {
