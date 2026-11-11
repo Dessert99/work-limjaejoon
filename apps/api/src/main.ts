@@ -1,9 +1,12 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // 내부망의 Nginx가 전달 헤더를 덮어쓰는 구성에서만 바로 앞 중계 한 단계를 신뢰한다.
+  app.set('trust proxy', process.env.TRUST_PROXY === '1' ? 1 : false);
   app.enableCors({
     origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3100',
   });
