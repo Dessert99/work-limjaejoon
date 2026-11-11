@@ -10,6 +10,20 @@ services:
       dockerfile: apps/api/Dockerfile
     # 자식 프로세스를 회수하고 종료 신호를 전달한다.
     init: true
+    # 변환 문서가 외부 참조로 홈 네트워크나 인터넷에 접근하지 못하게 한다.
+    networks:
+      - processing
+    # 원본과 결과는 /tmp에만 쓰고 실행 이미지에는 기록하지 않는다.
+    read_only: true
+    # 외부 처리 프로그램에 불필요한 커널 권한과 권한 상승을 허용하지 않는다.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # 변환 프로그램의 프로세스 폭증과 호스트 자원 독점을 제한한다.
+    pids_limit: 128
+    mem_limit: 2g
+    cpus: 2
     # 로컬에서만 접근을 허용하고 API_PORT로 호스트 포트를 바꿀 수 있게 한다.
     ports:
       - '127.0.0.1:${API_PORT:-3101}:3101'
@@ -21,7 +35,21 @@ services:
       FRONTEND_ORIGIN: http://localhost:3100
       # 임시 경로를 참조하는 프로그램이 메모리 디스크를 사용하게 한다.
       TMPDIR: /tmp
+      # 합의한 10분 보관 정책을 기본으로 적용한다.
+      RESULT_TTL_SECONDS: '${RESULT_TTL_SECONDS:-600}'
+      # 무거운 작업의 IP당 시간당 요청 상한도 운영자가 명시한다.
+      PDF_RATE_LIMIT: '${PDF_RATE_LIMIT:-}'
+      DOCUMENT_RATE_LIMIT: '${DOCUMENT_RATE_LIMIT:-}'
+      # 실제 파일 품질을 확인하기 전까지 한글 문서 변환은 실험 기능으로 제공한다.
+      HWP_EXPERIMENTAL_ENABLED: '${HWP_EXPERIMENTAL_ENABLED:-1}'
+      # 네이티브 이미지 처리와 변환 프로그램이 작업마다 스레드를 늘리지 않게 한다.
+      OMP_NUM_THREADS: '1'
+      OMP_THREAD_LIMIT: '1'
     # 임시 파일 경로를 컨테이너 디스크 대신 메모리 파일시스템에 둔다.
     tmpfs:
       # /tmp 전체의 크기를 1GiB로 제한하고 일반 사용자도 임시 파일을 만들 수 있게 한다.
       - /tmp:size=1g,mode=1777
+# API는 외부 경로가 없는 전용 네트워크에서 호스트의 로컬 포트로만 제공한다.
+networks:
+  processing:
+    internal: true
