@@ -40,7 +40,7 @@ pnpm preview
 
 ## 프론트 배포와 검색 노출
 
-프론트는 Cloudflare Pages에 정적 파일로 배포한다. 현재 도구는 API 없이 동작하므로 백엔드를 함께 배포할 필요가 없다. GitHub 자동 배포를 사용하려면 Cloudflare 대시보드의 Workers & Pages에서 Pages 프로젝트를 만들고 `Dessert99/work-limjaejoon` 저장소를 연결한다. Direct Upload로 만든 프로젝트는 나중에 Git 연동 방식으로 전환할 수 없으므로 처음부터 Git 연동을 선택한다.
+프론트는 Cloudflare Pages에 정적 파일로 배포한다. 이미지 압축·변환과 글자 수는 API 없이 동작하고, PDF·문서 도구는 별도 API 배포가 필요하다. GitHub 자동 배포를 사용하려면 Cloudflare 대시보드의 Workers & Pages에서 Pages 프로젝트를 만들고 `Dessert99/work-limjaejoon` 저장소를 연결한다. Direct Upload로 만든 프로젝트는 나중에 Git 연동 방식으로 전환할 수 없으므로 처음부터 Git 연동을 선택한다.
 
 | 항목               | 값                              |
 | ------------------ | ------------------------------- |
@@ -79,7 +79,7 @@ docker compose logs -f api
 docker compose down
 ```
 
-`apps/api/Dockerfile`은 API 이미지 빌드를, `compose.yaml`은 로컬 포트와 환경변수, `/tmp`의 1GiB tmpfs를 설정한다. 각 설정의 역할은 파일 안에 주석으로 적었다. macOS에서는 tmpfs가 Docker의 Linux VM 안에 생성된다. tmpfs만으로 스왑까지 금지되는 것은 아니므로, 운영 환경에서 SSD 기록을 막으려면 VM의 스왑 설정도 별도로 확인해야 한다. 파일 도구의 업로드·검증·큐·삭제 로직과 Ghostscript·LibreOffice 설치 구성을 추가했다. 실제 외부 프로그램 변환과 컨테이너 실행 검증은 아직 수행하지 않았다.
+`apps/api/Dockerfile`은 API 이미지 빌드를, `compose.yaml`은 로컬 포트와 환경변수, `/tmp`의 1GiB tmpfs를 설정한다. 각 설정의 역할은 파일 안에 주석으로 적었다. macOS에서는 tmpfs가 Docker의 Linux VM 안에 생성된다. tmpfs만으로 스왑까지 금지되는 것은 아니므로, 운영 환경에서 SSD 기록을 막으려면 VM의 스왑 설정도 별도로 확인해야 한다. 파일 도구의 업로드·검증·큐·삭제 로직과 Ghostscript·LibreOffice 설치 구성을 추가했다. Apple Silicon 개발 PC의 실제 Docker 환경에서 빌드·기동·상태 확인, 작은 PDF 압축과 DOCX 변환·다운로드·삭제를 검증했다. 운영 맥미니(Linux amd64)와 실제 문서 레이아웃 품질은 별도로 확인한다.
 
 ## 추가 도구 구현과 검증 범위
 
@@ -91,12 +91,12 @@ docker compose down
 | `/pdf-merge/` | 파일 순서에 따른 PDF 합치기 | 실제 PDF의 결과 페이지 수·순서·다운로드 E2E 통과 |
 | `/pdf-split/` | 범위별 추출, 여러 결과 ZIP | 실제 PDF의 범위 추출·ZIP·다운로드 E2E 통과 |
 | `/pdf-edit/` | 브라우저 pdf.js 썸네일, 서버 순서·회전·삭제 | 작은 PDF 두 개의 실제 Canvas 픽셀, 파일 간 페이지 이동·회전·삭제, 다운로드 결과 E2E 통과 |
-| `/pdf-compressor/` | Ghostscript 실행, 커지면 원본 반환 | 명령 경계 유닛과 미설치 오류 안내 E2E. 실제 압축 품질·성능 미검증 |
-| `/document-to-pdf/` | DOCX·PPTX와 HWP·HWPX 실험 변환 | HWP 실제 OLE 헤더·HWPX 컨테이너 검증, 확장 설치·명령 경계 유닛과 미설치 안내 E2E. 실제 변환 품질은 미검증 |
+| `/pdf-compressor/` | Ghostscript 실행, 커지면 원본 반환 | 실제 Docker에서 약 443KB 그림 PDF를 70KB로 압축하고 다운로드·삭제 E2E 통과. 실제 과제 파일 품질·성능은 미검증 |
+| `/document-to-pdf/` | DOCX·PPTX와 HWP·HWPX 실험 변환 | 실제 Docker의 작은 DOCX 변환·다운로드·삭제 통과. PPTX·HWP·HWPX 실제 변환과 문서 레이아웃 품질은 미검증 |
 
 서버 요청은 `POST /jobs`로 작업을 만들고 `POST /jobs/:id/files`에 파일 하나씩 업로드한 뒤 `POST /jobs/:id/start`로 시작한다. 상태는 `GET /jobs/:id`, 결과는 `GET /jobs/:id/download`, 취소는 `DELETE /jobs/:id`다. 작업 ID는 비밀 토큰이므로 공유하지 않는다. 파일 헤더와 ZIP 내부 구조를 검사하고, 서버 파일은 파일당 90MB·합계 300MB를 제한한다. 입력은 처리 후 삭제하고 결과와 프로그램 중간 산출물을 분리한다. 다운로드 전송이 끝나면 결과를 삭제하며, 미다운로드 결과는 완료 후 기본 10분에 별도 타이머로 삭제한다. 중단된 업로드와 보조 정리는 30초 간격으로 수행한다.
 
-가벼운 처리 큐 3개, PDF 압축 2개, 문서 변환 1개를 분리한다. 이 동시 실행 수와 외부 명령 60초 제한은 초안에 따른 구현값이며 성능 목표 달성을 뜻하지 않는다. 임시 공간이 부족하면 요청 본문을 읽지 않고 공간 확보까지 대기한다. 대기와 업로드의 시간 제한은 120초다. 컨테이너에는 메모리 2GB·CPU 2개·프로세스 128개 제한, 읽기 전용 루트와 외부망이 없는 내부 네트워크를 구성했다. 운영 Cloudflare Tunnel 연결은 이 내부망의 API를 외부에 직접 노출하지 않는 별도 프록시 구성이 필요하며 아직 적용하지 않았다.
+가벼운 처리 큐 3개, PDF 압축 2개, 문서 변환 1개를 분리한다. 이 동시 실행 수와 외부 명령 60초 제한은 초안에 따른 구현값이며 성능 목표 달성을 뜻하지 않는다. 임시 공간이 부족하면 요청 본문을 읽지 않고 공간 확보까지 대기한다. 대기와 업로드의 시간 제한은 120초다. 컨테이너에는 메모리 2GB·CPU 2개·프로세스 128개 제한, 읽기 전용 루트와 외부망이 없는 내부 네트워크를 구성했다. Nginx 중계만 호스트의 127.0.0.1:3101에 연결하고 API는 내부망에 남긴다. 사용자 IP 헤더는 Nginx가 다시 작성하며 API는 중계 한 단계만 신뢰한다. 운영 Tunnel은 이 localhost 주소에 연결한다.
 
 테스트는 기능별 핵심 유닛과 작은 파일의 도구별 E2E만 추가한다. 아래 E2E는 개발 서버 3100과 테스트 API 3101이 켜져 있어야 한다. 정적 미리보기를 사용할 경우 빌드 시 `NEXT_PUBLIC_API_URL`을 테스트 API로 지정해야 한다. 테스트는 홈을 방문하지 않고 GPU를 비활성화한다.
 
@@ -107,11 +107,26 @@ WORKSPACE_PREVIEW_URL=http://localhost:3100 node apps/web/app/character-counter/
 TOOL=pdf-merge WORKSPACE_PREVIEW_URL=http://localhost:3100 node 'apps/web/app/(file-tools)/_components/FileToolWorkspace.browser-check.mjs'
 ```
 
-`TOOL`은 `images-to-pdf`, `pdf-merge`, `pdf-split`, `pdf-edit`, `pdf-compress`, `document-to-pdf` 중 하나로 지정한다. 외부 프로그램이 없는 환경에서는 `pdf-compress`·`document-to-pdf`에 `EXPECT_UNAVAILABLE=1`을 추가해 오류 안내만 확인하며, 이를 실제 변환 검증으로 간주하지 않는다. 이번 작업에서는 3D 렌더링·대량 처리·부하·Docker 빌드·전체 프론트 빌드는 실행하지 않았다. 광고·모니터링·성능 계측과 운영 배포도 적용하지 않았다.
+`TOOL`은 `images-to-pdf`, `pdf-merge`, `pdf-split`, `pdf-edit`, `pdf-compress`, `document-to-pdf` 중 하나로 지정한다. 외부 프로그램이 없는 환경에서는 `pdf-compress`·`document-to-pdf`에 `EXPECT_UNAVAILABLE=1`을 추가해 오류 안내만 확인하며, 이를 실제 변환 검증으로 간주하지 않는다. 초기 구현에서는 3D 렌더링·대량 처리·부하·Docker 빌드·전체 프론트 빌드를 실행하지 않았다. 이후 배포 준비에서 Docker 실제 실행과 작은 변환, 작업자 1개·Node 힙 1.5GB 제한의 전체 정적 프론트 빌드를 검증했다. 3D·대량·부하 테스트는 계속 제외한다. 광고·모니터링·성능 계측과 운영 배포도 적용하지 않았다.
 
 별도 이미지 변환 E2E는 `WORKSPACE_PREVIEW_URL=http://localhost:3100 node apps/web/app/image-converter/_components/ImageConverter.browser-check.mjs`로 실행한다. PDF 편집은 `TOOL=pdf-edit`로 실제 작은 썸네일과 서버 결과를 검사한다. 한글 문서 설정 오류 E2E는 `TOOL=document-to-pdf DOCUMENT_FORMAT=hwpx EXPECT_UNAVAILABLE=1`을 지정한다. 이 구조 fixture는 실제 과제 문서의 변환 품질 검사를 대신하지 않는다.
 
 HWP·HWPX는 사용자 결정에 따라 실험 기능으로 표시한다. 실행 이미지에 Java와 [H2Orestart v0.8.0](https://github.com/ebandal/H2Orestart/releases/tag/v0.8.0)을 SHA-256 검증 후 설치하며, 설치 확인 파일과 `HWP_EXPERIMENTAL_ENABLED=1`이 모두 있어야 변환한다. `HWP_EXPERIMENTAL_ENABLED=0`으로 중지할 수 있다. 실제 HWP·HWPX·DOCX·PPTX의 레이아웃 품질은 아직 검증하지 않았다. PDF 썸네일은 브라우저 pdf.js로 작은 화면 영역만 순차 렌더링하고 실제 파일 편집은 서버에 맡긴다.
+
+## Linux 맥미니 배포 순서
+
+운영 맥미니는 Linux amd64이며 Docker 자동 시작과 기존 `cloudflared` 서비스가 실행 중이다. 기존 Tunnel은 다른 사이트도 연결하므로 토큰을 바꾸거나 `cloudflared service install`을 다시 실행하지 않는다.
+
+1. 기존 Cloudflare Pages 자동 배포 상태를 확인한다. API 준비 전에 새 화면이 공개되지 않게 하려면 소스를 전송하기 전에 자동 배포를 잠시 중지하고 API 연결 확인 후 다시 켠다.
+2. 맥미니에서 최신 코드를 받은 뒤 `.env.example`을 `.env`로 복사하고 `FRONTEND_ORIGIN=https://work.limjaejoon.com`을 지정한다. 요청 상한과 보관 시간 설정도 같은 파일에 둔다.
+3. `docker compose up --build -d`로 API와 Nginx 중계를 함께 실행한다. API가 건강 상태가 된 후 중계가 시작되며 둘 다 Docker 재시작 시 자동 복구한다.
+4. 맥미니에서 `curl --fail http://127.0.0.1:3101/health`로 확인한다. 호스트 포트는 Nginx만 열며 API 자체는 내부망에 둔다.
+5. Cloudflare의 기존 Tunnel에 `api.work.limjaejoon.com`에서 `http://localhost:3101`로 가는 새 공개 애플리케이션 경로만 추가한다. 기존 경로는 유지한다.
+6. 외부 API 상태와 CORS를 확인한 뒤 프론트 배포를 진행한다. Pages의 저장소는 `Dessert99/work-limjaejoon`, 브랜치는 `main`, 명령은 `pnpm --filter @work/web build`, 출력은 `apps/web/out`이다.
+
+중계 포트의 `127.0.0.1` 제한은 유지한다. Cloudflare가 덮어쓴 `CF-Connecting-IP`를 기준으로 사용자별 요청 상한을 적용하므로 중계 포트를 인터넷에 직접 열지 않는다. 로컬 API를 직접 Node로 실행하면 기본적으로 전달 헤더를 신뢰하지 않으며, Compose에서만 `TRUST_PROXY=1`을 지정한다.
+
+실제 변환과 중계 경계 검사는 프로젝트 루트에서 `node apps/api/src/jobs/jobs.e2e.mjs`로 실행한다. API와 Nginx가 실행 중이어야 하며 Node 의존성 설치가 필요하다. 작은 PDF·DOCX만 사용하고 사용자별 IP 제한·임의 전달 헤더 덮어쓰기·다운로드 후 삭제를 확인한다. 운영용 CORS 설정으로 실행할 때는 `TEST_FRONTEND_ORIGIN=https://work.limjaejoon.com`을 지정한다. 이 검사는 localhost 중계용이며 공개 Tunnel 주소에서는 Cloudflare가 시험용 IP 헤더를 덮어쓰므로 사용하지 않는다.
 
 ## 작업방 모델 작업 재개
 
