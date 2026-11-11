@@ -4,9 +4,9 @@ pnpm workspace의 `apps/web`에 Next.js App Router, React, TypeScript를 구성�
 
 현재 `/`는 3D 작업방이며 이미지 도구와 라벨을 누르면 `/image-compressor/`로 이동한다. 이미지 용량 줄이기 화면은 확정한 인화지 디자인과 단일 파일 선택·압축·다운로드를 제공한다. `+`를 누르면 이전 이미지와 정보를 지운 뒤 새 파일을 고른다. 선택을 취소하면 빈 상태로 남는다. 파일을 선택하면 Worker가 자동으로 압축하며 원본·결과와 실제 용량을 나란히 보여준다. Download는 완료 후 활성화되고 미리보기에 사용한 결과 파일을 그대로 저장한다. 좌측 홈 링크를 누르면 작업방으로 돌아간다.
 
-제목과 메타데이터, 홈의 도구 링크는 정적 HTML로 생성한다. 검색 유입은 도구 상세 페이지를 대상으로 하며 `/image-compressor/`는 색인을 허용하고 canonical을 `https://work.limjaejoon.com/image-compressor/`로 지정한다. 작업대 아래의 설명과 사용법도 정적 HTML에 포함한다. `apps/web/public/sitemap.xml`에는 구현한 도구 상세 페이지만 등록하고, `robots.txt`에서 이 sitemap을 알린다. 다른 7개 도구 화면은 아직 구현하지 않았으며 FAQ와 관련 도구 목록은 추가하지 않는다.
+제목과 메타데이터, 홈의 도구 링크는 정적 HTML로 생성한다. 검색 유입은 도구 상세 페이지를 대상으로 하며 `/image-compressor/`는 색인을 허용하고 canonical을 `https://work.limjaejoon.com/image-compressor/`로 지정한다. 작업대 아래의 설명과 사용법도 정적 HTML에 포함한다. `apps/web/public/sitemap.xml`에는 구현한 도구 상세 페이지만 등록하고, `robots.txt`에서 이 sitemap을 알린다. 홈에는 구현한 도구의 정적 링크 목록을 제공한다. 서버 도구와 글자 수 세기의 구현·검증 범위는 아래 표를 따른다.
 
-이미지 도구는 최신 디자인 결정에 따라 JPG·PNG·WebP 한 장만 다루며 파일을 서버로 보내지 않는다. 원본 형식과 해상도를 유지한다. JPG·WebP는 이미지 업로드 후 하단 중앙에 용량 감소 목표 슬라이더(0~99%, 기본 70%)를 표시하며 Download는 오른쪽에 둔다. 빈 상태와 파일 선택 취소 후에는 슬라이더를 숨긴다. 예를 들어 70%는 원본 용량의 30% 이하를 목표로 하며, Worker에서 한 번 디코딩한 뒤 최대 9회 실제 인코딩으로 품질을 탐색한다. 목표에 도달하지 못하면 검사한 작은 결과와 미달 안내를 제공하며 목표율과 실제 감소율을 혼동하지 않는다. 0%는 원본 바이트를 그대로 제공한다. PNG는 기존 무손실 압축을 유지하고 목표 슬라이더를 제공하지 않는다. 이 화면은 해상도 조절 입력이 없다. 설정 변경 즉시 이전 Worker와 결과를 무효화하고 200ms 뒤 최신 목표만 처리한다. 원본 미리보기와 해상도는 유지하고 결과 용량·실제 절감률을 갱신한다. 새 파일을 고르면 목표는 기본값으로 돌아간다. 해상도가 그대로이고 용량도 줄지 않으면 원본 바이트를 유지한다. SVG·HEIC 등은 기존 변환기의 지원 범위 밖이며 안내를 표시한다. `+`를 누르면 이전 Worker를 종료하고 원본·결과 Object URL을 해제한다. 도메인의 ZIP 생성 기능은 유지하지만 이 화면에서는 사용하지 않는다.
+이미지 압축 화면은 최신 디자인 결정에 따라 JPG·PNG·WebP 한 장만 다루며 파일을 서버로 보내지 않는다. 원본 형식과 해상도를 유지한다. JPG·WebP는 이미지 업로드 후 하단 중앙에 용량 감소 목표 슬라이더(0~99%, 기본 70%)를 표시하며 Download는 오른쪽에 둔다. 빈 상태와 파일 선택 취소 후에는 슬라이더를 숨긴다. 예를 들어 70%는 원본 용량의 30% 이하를 목표로 하며, Worker에서 한 번 디코딩한 뒤 최대 9회 실제 인코딩으로 품질을 탐색한다. 목표에 도달하지 못하면 검사한 작은 결과와 미달 안내를 제공하며 목표율과 실제 감소율을 혼동하지 않는다. 0%는 원본 바이트를 그대로 제공한다. PNG는 기존 무손실 압축을 유지하고 목표 슬라이더를 제공하지 않는다. 이 화면은 해상도 조절 입력이 없다. 설정 변경 즉시 이전 Worker와 결과를 무효화하고 200ms 뒤 최신 목표만 처리한다. 원본 미리보기와 해상도는 유지하고 결과 용량·실제 절감률을 갱신한다. 새 파일을 고르면 목표는 기본값으로 돌아간다. 해상도가 그대로이고 용량도 줄지 않으면 원본 바이트를 유지한다. SVG·HEIC 등은 기존 변환기의 지원 범위 밖이며 안내를 표시한다. `+`를 누르면 이전 Worker를 종료하고 원본·결과 Object URL을 해제한다. 도메인의 ZIP 생성 기능은 유지하지만 이 화면에서는 사용하지 않는다.
 
 제목은 Noto Serif KR의 현재 제목용 부분 글꼴을 사용한다. 다른 도구 제목에 확장할 때 해당 글리프를 추가해야 한다. 폰트와 FColombati 버튼의 배포 허가문은 `apps/web/public/licenses/`에 보관한다. 돌아가기 가방은 원본 GLB를 별도로 읽어 효과와 방을 제외한 아이콘으로 표시하며, 이 아이콘용 조명은 Blender 장면 조명 재현을 뜻하지 않는다.
 
@@ -63,7 +63,7 @@ Google Search Console에서 운영 도메인 소유권을 확인하고 `https://
 
 ## 로컬 API 실행
 
-Docker를 실행한 뒤 프로젝트 루트에서 API를 빌드하고 실행한다. 프론트는 별도 터미널에서 기존처럼 `pnpm dev`로 실행한다.
+루트 `.env.example`을 참고해 `.env`에 실행 설정을 작성한 뒤 Docker에서 API를 실행한다. 미다운로드 결과 보관 시간은 합의한 10분(`RESULT_TTL_SECONDS=600`)이 기본값이다. 요청 상한 예시인 PDF 압축 시간당 20회·문서 변환 10회는 PRD 초안의 초기 운영값이며 실제 사용 측정 후 조정한다. `PDF_RATE_LIMIT` 또는 `DOCUMENT_RATE_LIMIT`가 비어 있으면 해당 무거운 도구 요청을 거부한다. 프론트는 별도 터미널에서 기존처럼 `pnpm dev`로 실행한다.
 
 ```sh
 docker compose up --build -d
@@ -79,7 +79,39 @@ docker compose logs -f api
 docker compose down
 ```
 
-`apps/api/Dockerfile`은 API 이미지 빌드를, `compose.yaml`은 로컬 포트와 환경변수, `/tmp`의 1GiB tmpfs를 설정한다. 각 설정의 역할은 파일 안에 주석으로 적었다. macOS에서는 tmpfs가 Docker의 Linux VM 안에 생성된다. tmpfs만으로 스왑까지 금지되는 것은 아니므로, 운영 환경에서 SSD 기록을 막으려면 VM의 스왑 설정도 별도로 확인해야 한다. 파일 변환 프로그램과 업로드·삭제 로직은 해당 기능을 구현할 때 추가한다.
+`apps/api/Dockerfile`은 API 이미지 빌드를, `compose.yaml`은 로컬 포트와 환경변수, `/tmp`의 1GiB tmpfs를 설정한다. 각 설정의 역할은 파일 안에 주석으로 적었다. macOS에서는 tmpfs가 Docker의 Linux VM 안에 생성된다. tmpfs만으로 스왑까지 금지되는 것은 아니므로, 운영 환경에서 SSD 기록을 막으려면 VM의 스왑 설정도 별도로 확인해야 한다. 파일 도구의 업로드·검증·큐·삭제 로직과 Ghostscript·LibreOffice 설치 구성을 추가했다. 실제 외부 프로그램 변환과 컨테이너 실행 검증은 아직 수행하지 않았다.
+
+## 추가 도구 구현과 검증 범위
+
+| 경로 | 구현 상태 | 확인한 범위 |
+| --- | --- | --- |
+| `/character-counter/` | 글자·공백 제외·두 바이트 기준·브라우저 초안 저장 | ASCII 1바이트·비ASCII 구성 문자 2바이트 관행값, UTF-8 실제 바이트. 계산·복원·서버 미전송 E2E 통과 |
+| `/image-converter/` | JPG·PNG·WebP 형식·품질·크기 조절, 최대 30장 ZIP | 작은 이미지 2장으로 코덱·크기 조절·실제 미리보기·다운로드·ZIP 바이트 일치, 최신 설정·URL 해제·서버 미전송 E2E 통과 |
+| `/images-to-pdf/` | 사진 순서, A4·이미지 크기, 여백, 선택 압축 | 작은 PNG의 실제 PDF 생성·A4 크기·다운로드 E2E 통과 |
+| `/pdf-merge/` | 파일 순서에 따른 PDF 합치기 | 실제 PDF의 결과 페이지 수·순서·다운로드 E2E 통과 |
+| `/pdf-split/` | 범위별 추출, 여러 결과 ZIP | 실제 PDF의 범위 추출·ZIP·다운로드 E2E 통과 |
+| `/pdf-edit/` | 브라우저 pdf.js 썸네일, 서버 순서·회전·삭제 | 작은 PDF 두 개의 실제 Canvas 픽셀, 파일 간 페이지 이동·회전·삭제, 다운로드 결과 E2E 통과 |
+| `/pdf-compressor/` | Ghostscript 실행, 커지면 원본 반환 | 명령 경계 유닛과 미설치 오류 안내 E2E. 실제 압축 품질·성능 미검증 |
+| `/document-to-pdf/` | DOCX·PPTX와 HWP·HWPX 실험 변환 | HWP 실제 OLE 헤더·HWPX 컨테이너 검증, 확장 설치·명령 경계 유닛과 미설치 안내 E2E. 실제 변환 품질은 미검증 |
+
+서버 요청은 `POST /jobs`로 작업을 만들고 `POST /jobs/:id/files`에 파일 하나씩 업로드한 뒤 `POST /jobs/:id/start`로 시작한다. 상태는 `GET /jobs/:id`, 결과는 `GET /jobs/:id/download`, 취소는 `DELETE /jobs/:id`다. 작업 ID는 비밀 토큰이므로 공유하지 않는다. 파일 헤더와 ZIP 내부 구조를 검사하고, 서버 파일은 파일당 90MB·합계 300MB를 제한한다. 입력은 처리 후 삭제하고 결과와 프로그램 중간 산출물을 분리한다. 다운로드 전송이 끝나면 결과를 삭제하며, 미다운로드 결과는 완료 후 기본 10분에 별도 타이머로 삭제한다. 중단된 업로드와 보조 정리는 30초 간격으로 수행한다.
+
+가벼운 처리 큐 3개, PDF 압축 2개, 문서 변환 1개를 분리한다. 이 동시 실행 수와 외부 명령 60초 제한은 초안에 따른 구현값이며 성능 목표 달성을 뜻하지 않는다. 임시 공간이 부족하면 요청 본문을 읽지 않고 공간 확보까지 대기한다. 대기와 업로드의 시간 제한은 120초다. 컨테이너에는 메모리 2GB·CPU 2개·프로세스 128개 제한, 읽기 전용 루트와 외부망이 없는 내부 네트워크를 구성했다. 운영 Cloudflare Tunnel 연결은 이 내부망의 API를 외부에 직접 노출하지 않는 별도 프록시 구성이 필요하며 아직 적용하지 않았다.
+
+테스트는 기능별 핵심 유닛과 작은 파일의 도구별 E2E만 추가한다. 아래 E2E는 개발 서버 3100과 테스트 API 3101이 켜져 있어야 한다. 정적 미리보기를 사용할 경우 빌드 시 `NEXT_PUBLIC_API_URL`을 테스트 API로 지정해야 한다. 테스트는 홈을 방문하지 않고 GPU를 비활성화한다.
+
+```sh
+pnpm --filter @work/api test
+pnpm --filter @work/web exec vitest run domains/character-counter/lib/count-characters.test.ts
+WORKSPACE_PREVIEW_URL=http://localhost:3100 node apps/web/app/character-counter/_components/CharacterCounter.browser-check.mjs
+TOOL=pdf-merge WORKSPACE_PREVIEW_URL=http://localhost:3100 node 'apps/web/app/(file-tools)/_components/FileToolWorkspace.browser-check.mjs'
+```
+
+`TOOL`은 `images-to-pdf`, `pdf-merge`, `pdf-split`, `pdf-edit`, `pdf-compress`, `document-to-pdf` 중 하나로 지정한다. 외부 프로그램이 없는 환경에서는 `pdf-compress`·`document-to-pdf`에 `EXPECT_UNAVAILABLE=1`을 추가해 오류 안내만 확인하며, 이를 실제 변환 검증으로 간주하지 않는다. 이번 작업에서는 3D 렌더링·대량 처리·부하·Docker 빌드·전체 프론트 빌드는 실행하지 않았다. 광고·모니터링·성능 계측과 운영 배포도 적용하지 않았다.
+
+별도 이미지 변환 E2E는 `WORKSPACE_PREVIEW_URL=http://localhost:3100 node apps/web/app/image-converter/_components/ImageConverter.browser-check.mjs`로 실행한다. PDF 편집은 `TOOL=pdf-edit`로 실제 작은 썸네일과 서버 결과를 검사한다. 한글 문서 설정 오류 E2E는 `TOOL=document-to-pdf DOCUMENT_FORMAT=hwpx EXPECT_UNAVAILABLE=1`을 지정한다. 이 구조 fixture는 실제 과제 문서의 변환 품질 검사를 대신하지 않는다.
+
+HWP·HWPX는 사용자 결정에 따라 실험 기능으로 표시한다. 실행 이미지에 Java와 [H2Orestart v0.8.0](https://github.com/ebandal/H2Orestart/releases/tag/v0.8.0)을 SHA-256 검증 후 설치하며, 설치 확인 파일과 `HWP_EXPERIMENTAL_ENABLED=1`이 모두 있어야 변환한다. `HWP_EXPERIMENTAL_ENABLED=0`으로 중지할 수 있다. 실제 HWP·HWPX·DOCX·PPTX의 레이아웃 품질은 아직 검증하지 않았다. PDF 썸네일은 브라우저 pdf.js로 작은 화면 영역만 순차 렌더링하고 실제 파일 편집은 서버에 맡긴다.
 
 ## 작업방 모델 작업 재개
 
