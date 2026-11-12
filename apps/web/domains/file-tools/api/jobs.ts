@@ -3,7 +3,7 @@ import type { FileJob, FileTool } from '../model/file-tools';
 const base =
   process.env.NEXT_PUBLIC_API_URL ??
   (process.env.NODE_ENV === 'production'
-    ? 'https://api.work.limjaejoon.com'
+    ? 'https://work-api.limjaejoon.com'
     : 'http://localhost:3101');
 const states = ['uploading', 'queued', 'processing', 'completed', 'failed'];
 

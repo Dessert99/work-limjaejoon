@@ -107,7 +107,7 @@ WORKSPACE_PREVIEW_URL=http://localhost:3100 node apps/web/app/character-counter/
 TOOL=pdf-merge WORKSPACE_PREVIEW_URL=http://localhost:3100 node 'apps/web/app/(file-tools)/_components/FileToolWorkspace.browser-check.mjs'
 ```
 
-`TOOL`은 `images-to-pdf`, `pdf-merge`, `pdf-split`, `pdf-edit`, `pdf-compress`, `document-to-pdf` 중 하나로 지정한다. 외부 프로그램이 없는 환경에서는 `pdf-compress`·`document-to-pdf`에 `EXPECT_UNAVAILABLE=1`을 추가해 오류 안내만 확인하며, 이를 실제 변환 검증으로 간주하지 않는다. 초기 구현에서는 3D 렌더링·대량 처리·부하·Docker 빌드·전체 프론트 빌드를 실행하지 않았다. 이후 배포 준비에서 Docker 실제 실행과 작은 변환, 작업자 1개·Node 힙 1.5GB 제한의 전체 정적 프론트 빌드를 검증했다. 3D·대량·부하 테스트는 계속 제외한다. 광고·모니터링·성능 계측과 운영 배포도 적용하지 않았다.
+`TOOL`은 `images-to-pdf`, `pdf-merge`, `pdf-split`, `pdf-edit`, `pdf-compress`, `document-to-pdf` 중 하나로 지정한다. 외부 프로그램이 없는 환경에서는 `pdf-compress`·`document-to-pdf`에 `EXPECT_UNAVAILABLE=1`을 추가해 오류 안내만 확인하며, 이를 실제 변환 검증으로 간주하지 않는다. 초기 구현에서는 3D 렌더링·대량 처리·부하·Docker 빌드·전체 프론트 빌드를 실행하지 않았다. 이후 배포 준비에서 Docker 실제 실행과 작은 변환, 작업자 1개·Node 힙 1.5GB 제한의 전체 정적 프론트 빌드를 검증했다. 3D·대량·부하 테스트는 계속 제외한다. 광고·모니터링·성능 계측은 아직 적용하지 않았다.
 
 별도 이미지 변환 E2E는 `WORKSPACE_PREVIEW_URL=http://localhost:3100 node apps/web/app/image-converter/_components/ImageConverter.browser-check.mjs`로 실행한다. PDF 편집은 `TOOL=pdf-edit`로 실제 작은 썸네일과 서버 결과를 검사한다. 한글 문서 설정 오류 E2E는 `TOOL=document-to-pdf DOCUMENT_FORMAT=hwpx EXPECT_UNAVAILABLE=1`을 지정한다. 이 구조 fixture는 실제 과제 문서의 변환 품질 검사를 대신하지 않는다.
 
@@ -115,14 +115,15 @@ HWP·HWPX는 사용자 결정에 따라 실험 기능으로 표시한다. 실행
 
 ## Linux 맥미니 배포 순서
 
-운영 맥미니는 Linux amd64이며 Docker 자동 시작과 기존 `cloudflared` 서비스가 실행 중이다. 기존 Tunnel은 다른 사이트도 연결하므로 토큰을 바꾸거나 `cloudflared service install`을 다시 실행하지 않는다.
+운영 맥미니는 Linux amd64이며 Docker 자동 시작과 기존 `cloudflared` 서비스가 실행 중이다. work는 전용 `limjaejoon` Tunnel과 `cloudflared-limjaejoon` systemd 서비스로 분리한다. 다른 사이트를 연결하는 기존 `graduate-me` Tunnel과 `cloudflared` 서비스의 토큰은 유지하며 `cloudflared service install`을 다시 실행하지 않는다.
 
 1. 기존 Cloudflare Pages 자동 배포 상태를 확인한다. API 준비 전에 새 화면이 공개되지 않게 하려면 소스를 전송하기 전에 자동 배포를 잠시 중지하고 API 연결 확인 후 다시 켠다.
-2. 맥미니에서 최신 코드를 받은 뒤 `.env.example`을 `.env`로 복사하고 `FRONTEND_ORIGIN=https://work.limjaejoon.com`을 지정한다. 요청 상한과 보관 시간 설정도 같은 파일에 둔다.
+2. 맥미니의 `~/work-limjaejoon`에서 최신 코드를 받은 뒤 최초 설치에만 `.env.example`을 `.env`로 복사하고 `FRONTEND_ORIGIN=https://work.limjaejoon.com`을 지정한다. 요청 상한과 보관 시간 설정도 같은 파일에 두며 기존 `.env`를 덮어쓰지 않는다.
 3. `docker compose up --build -d`로 API와 Nginx 중계를 함께 실행한다. API가 건강 상태가 된 후 중계가 시작되며 둘 다 Docker 재시작 시 자동 복구한다.
 4. 맥미니에서 `curl --fail http://127.0.0.1:3101/health`로 확인한다. 호스트 포트는 Nginx만 열며 API 자체는 내부망에 둔다.
-5. Cloudflare의 기존 Tunnel에 `api.work.limjaejoon.com`에서 `http://localhost:3101`로 가는 새 공개 애플리케이션 경로만 추가한다. 기존 경로는 유지한다.
-6. 외부 API 상태와 CORS를 확인한 뒤 프론트 배포를 진행한다. Pages의 저장소는 `Dessert99/work-limjaejoon`, 브랜치는 `main`, 명령은 `pnpm --filter @work/web build`, 출력은 `apps/web/out`이다.
+5. Cloudflare에 전용 `limjaejoon` Tunnel을 만들고 맥미니에 별도 프로세스로 연결한다. 새 Tunnel에 `work-api.limjaejoon.com`에서 `http://127.0.0.1:3101`로 가는 공개 애플리케이션 경로를 추가한다. 이 내부 주소는 Tunnel 프로세스가 실행되는 운영 맥미니를 뜻한다.
+6. `cloudflared-limjaejoon.service`를 systemd에 등록하고 `sudo systemctl enable --now cloudflared-limjaejoon`으로 부팅 시 자동 시작을 설정한다. 현재 서비스 파일은 `/etc/systemd/system/cloudflared-limjaejoon.service`, 토큰은 `~/.config/cloudflared-limjaejoon/token`에 권한 `600`으로 보관한다. 수동 실행 터미널을 종료한 뒤에도 새 Tunnel과 외부 API 응답이 유지되는지 확인한다.
+7. 외부 API 상태와 CORS를 확인한 뒤 프론트 배포를 진행한다. 운영 API 기본 주소는 `https://work-api.limjaejoon.com`이며 다른 환경은 빌드 시 `NEXT_PUBLIC_API_URL`로 지정한다. Pages의 저장소는 `Dessert99/work-limjaejoon`, 브랜치는 `main`, 명령은 `pnpm --filter @work/web build`, 출력은 `apps/web/out`이다.
 
 중계 포트의 `127.0.0.1` 제한은 유지한다. Cloudflare가 덮어쓴 `CF-Connecting-IP`를 기준으로 사용자별 요청 상한을 적용하므로 중계 포트를 인터넷에 직접 열지 않는다. 로컬 API를 직접 Node로 실행하면 기본적으로 전달 헤더를 신뢰하지 않으며, Compose에서만 `TRUST_PROXY=1`을 지정한다.
 
