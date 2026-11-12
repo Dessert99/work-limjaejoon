@@ -1,11 +1,5 @@
 /** 서버 처리 도구의 요청 이름이며 화면 주소와는 구분한다. */
-export type FileTool =
-  | 'images-to-pdf'
-  | 'pdf-merge'
-  | 'pdf-split'
-  | 'pdf-edit'
-  | 'pdf-compress'
-  | 'document-to-pdf';
+export type FileTool = 'pdf-edit' | 'pdf-compress' | 'document-to-pdf';
 
 /** 브라우저가 화면에 표시할 서버 작업 상태다. */
 export type FileJob = {

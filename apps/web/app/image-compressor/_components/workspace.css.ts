@@ -6,13 +6,12 @@ globalFontFace('Workspace Serif', {
   fontWeight: 800,
   fontDisplay: 'swap',
 });
-globalStyle('body', { margin: 0 });
 const reduced = '(prefers-reduced-motion: reduce)';
 const shadow = (alpha: number) => `rgba(${theme.shadowRgb}, ${alpha})`;
 
 /** 종이 작업대의 질감은 이미지 요청 없이 표현한다. */
 export const page = style({
-  minHeight: '100svh',
+  minHeight: 'calc(100svh - var(--site-header-height))',
   paddingBottom: 1,
   color: theme.ink,
   backgroundColor: theme.desk,
@@ -29,7 +28,7 @@ export const brand = style({
   padding: '38px 24px 20px',
   textAlign: 'center',
   '@media': {
-    '(max-width: 700px)': { padding: '92px 20px 15px' },
+    '(max-width: 700px)': { padding: '32px 20px 15px' },
   },
 });
 /** 선택한 A 명조체를 로고처럼 사용한다. */
@@ -59,24 +58,6 @@ export const privacy = style({
   color: theme.title,
   wordBreak: 'keep-all',
   '@media': { '(max-width: 700px)': { fontSize: 10 } },
-});
-/** 추가 자산을 불러오지 않는 텍스트 로고로 홈 이동 경로를 제공한다. */
-export const homeLink = style({
-  position: 'absolute',
-  left: 24,
-  top: 20,
-  minHeight: 44,
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 8,
-  fontFamily: theme.buttonFont,
-  fontWeight: 600,
-  fontSize: 20,
-  color: theme.title,
-  textDecoration: 'none',
-  ':hover': { textDecoration: 'underline', textUnderlineOffset: 4 },
-  ':focus-visible': { outline: `2px solid ${theme.title}`, outlineOffset: 4 },
-  '@media': { '(max-width: 700px)': { left: 20, top: 16 } },
 });
 /** 데스크톱에서 두 인화지를 넓게 펼친다. */
 export const desk = style({

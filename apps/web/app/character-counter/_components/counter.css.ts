@@ -3,8 +3,7 @@ import { paperTheme } from '@/lib/styles/tokens';
 
 /** 종이 작업대 색상으로 화면을 채우고 모바일 여백을 확보한다. */
 export const page = style({
-  minHeight: '100dvh',
-  margin: -8,
+  minHeight: 'calc(100svh - var(--site-header-height))',
   padding: '36px 20px 64px',
   boxSizing: 'border-box',
   background: paperTheme.desk,
@@ -14,8 +13,6 @@ export const page = style({
 });
 /** 긴 입력창도 읽기 편한 폭으로 제한한다. */
 export const content = style({ maxWidth: 960, margin: '0 auto' });
-/** 다른 도구와 동일하게 정적 홈 링크를 제공한다. */
-export const home = style({ color: paperTheme.ink, textUnderlineOffset: 4 });
 /** 부분 글꼴에 없는 글자도 기본 시스템 글꼴로 선명하게 표시한다. */
 export const title = style({
   margin: '24px 0 8px',

@@ -55,10 +55,6 @@ export default function FileToolWorkspace({ tool }: { tool: FileTool }) {
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
-  const [pageSize, setPageSize] = useState('a4');
-  const [margin, setMargin] = useState(20);
-  const [compressImages, setCompressImages] = useState(false);
-  const [ranges, setRanges] = useState('');
   const [pages, setPages] = useState<PdfPage[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const currentJob = useRef<string | null>(null);
@@ -110,25 +106,6 @@ export default function FileToolWorkspace({ tool }: { tool: FileTool }) {
     let options: unknown = {};
     try {
       validateFiles(tool, files);
-      if (tool === 'images-to-pdf')
-        options = { pageSize, margin, compressImages };
-      if (tool === 'pdf-split') {
-        const selected = ranges
-          .split('\n')
-          .map((range) => range.trim())
-          .filter(Boolean);
-        if (
-          !selected.length ||
-          selected.some(
-            (range) =>
-              !/^\d+(?:\s*-\s*\d+)?(?:\s*,\s*\d+(?:\s*-\s*\d+)?)*$/.test(range)
-          )
-        )
-          throw new Error(
-            '페이지 범위를 3-5, 8처럼 입력해 주세요. 결과 파일마다 줄을 나눠 주세요.'
-          );
-        options = { ranges: selected };
-      }
       if (tool === 'pdf-edit') {
         if (!pages.length) throw new Error('저장할 페이지가 없습니다.');
         options = { pages };
@@ -276,74 +253,6 @@ export default function FileToolWorkspace({ tool }: { tool: FileTool }) {
           }}
         />
       )}
-      <fieldset
-        disabled={busy || downloading}
-        className={styles.options}>
-        {tool === 'images-to-pdf' && (
-          <>
-            <div className={styles.row}>
-              <label>
-                용지 크기{' '}
-                <select
-                  className={styles.input}
-                  value={pageSize}
-                  onChange={(event) => {
-                    cancel();
-                    setPageSize(event.target.value);
-                  }}>
-                  <option value='a4'>A4</option>
-                  <option value='image'>이미지 크기 맞춤</option>
-                </select>
-              </label>
-              <label>
-                여백 (pt){' '}
-                <input
-                  className={styles.input}
-                  type='number'
-                  min={0}
-                  max={100}
-                  value={margin}
-                  onChange={(event) => {
-                    cancel();
-                    setMargin(Number(event.target.value));
-                  }}
-                />
-              </label>
-            </div>
-            <label>
-              <input
-                type='checkbox'
-                checked={compressImages}
-                onChange={(event) => {
-                  cancel();
-                  setCompressImages(event.target.checked);
-                }}
-              />{' '}
-              사진을 압축해 PDF 용량 줄이기
-            </label>
-            <p className={styles.note}>
-              압축을 선택하지 않으면 JPG는 다시 압축하지 않습니다.
-            </p>
-          </>
-        )}
-        {tool === 'pdf-split' && (
-          <label>
-            추출할 페이지 범위
-            <textarea
-              className={styles.textarea}
-              value={ranges}
-              onChange={(event) => {
-                cancel();
-                setRanges(event.target.value);
-              }}
-              placeholder={'3-5, 8\n1-2'}
-            />
-            <span className={styles.note}>
-              각 줄을 별도 PDF로 저장합니다. 결과가 여러 개면 ZIP으로 받습니다.
-            </span>
-          </label>
-        )}
-      </fieldset>
       <div className={styles.row}>
         <button
           type='button'

@@ -51,3 +51,10 @@ export const paperTheme = {
   rangeThumbTop: '#fff9ed',
   rangeThumbShadow: '#705c3c44',
 };
+
+/** 공통 헤더와 본문이 같은 높이 기준으로 화면 공간을 나눈다. */
+export const siteLayout = {
+  headerHeight: '88px',
+  compactHeaderHeight: '116px',
+  compactMedia: '(max-width: 1100px)',
+};

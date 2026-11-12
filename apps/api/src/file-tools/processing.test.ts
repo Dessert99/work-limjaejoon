@@ -3,10 +3,7 @@ import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { PDFDocument } from 'pdf-lib';
-import { unzipSync } from 'fflate';
-import sharp from 'sharp';
 import { processFiles, type InputFile } from './processing';
-import { parsePageRange } from './pdf';
 import { runCommand } from './process-command';
 
 vi.mock('./process-command', () => ({ runCommand: vi.fn() }));
@@ -39,65 +36,6 @@ async function pdf(
 }
 
 describe('서버 파일 처리', () => {
-  it('사진 PDF: 작은 PNG를 A4 한 장에 넣고 잘못된 여백을 거부한다', async () => {
-    const directory = await workspace();
-    const bytes = await sharp({
-      create: { width: 1, height: 1, channels: 3, background: '#fff' },
-    })
-      .png()
-      .toBuffer();
-    const path = join(directory, 'input.png');
-    await writeFile(path, bytes);
-    const file = {
-      path,
-      name: 'input.png',
-      size: bytes.length,
-      kind: 'image/png',
-    };
-    const result = await processFiles(
-      'images-to-pdf',
-      [file],
-      { pageSize: 'a4', margin: 20 },
-      directory
-    );
-    const document = await PDFDocument.load(await readFile(result.path));
-    expect(document.getPageCount()).toBe(1);
-    expect(document.getPage(0).getWidth()).toBeCloseTo(595.28);
-    await expect(
-      processFiles('images-to-pdf', [file], { margin: -1 }, directory)
-    ).rejects.toThrow('설정');
-  });
-
-  it('PDF 합치기: 파일 순서대로 페이지를 보존한다', async () => {
-    const directory = await workspace();
-    const files = [
-      await pdf(directory, [100], 'a.pdf'),
-      await pdf(directory, [200], 'b.pdf'),
-    ];
-    const result = await processFiles('pdf-merge', files, {}, directory);
-    const merged = await PDFDocument.load(await readFile(result.path));
-    expect(merged.getPages().map((page) => page.getWidth())).toEqual([
-      100, 200,
-    ]);
-  });
-
-  it('PDF 나누기: 범위별 ZIP을 만들고 잘못된 범위를 거부한다', async () => {
-    const directory = await workspace();
-    const file = await pdf(directory, [100, 200, 300]);
-    const result = await processFiles(
-      'pdf-split',
-      [file],
-      { ranges: ['3, 1', '2'] },
-      directory
-    );
-    const entries = unzipSync(await readFile(result.path));
-    const first = await PDFDocument.load(Object.values(entries)[0]);
-    expect(first.getPages().map((page) => page.getWidth())).toEqual([300, 100]);
-    expect(Object.keys(entries)).toHaveLength(2);
-    expect(() => parsePageRange('0-2', 3)).toThrow();
-    expect(() => parsePageRange('1-999999999', 3)).toThrow();
-  });
-
   it('PDF 편집: 선택 순서와 상대 회전을 적용하고 범위 밖 페이지를 거부한다', async () => {
     const directory = await workspace();
     const file = await pdf(directory, [100, 200]);

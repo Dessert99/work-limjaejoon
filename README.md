@@ -4,7 +4,7 @@
 
 [서비스 바로가기](https://work.limjaejoon.com/)
 
-3D 작업방에서 도구를 골라 시작하거나, 홈의 도구 목록과 아래 링크로 원하는 기능을 바로 열 수 있습니다.
+3D 작업방에서 도구를 골라 시작하거나, 모든 페이지의 공통 상단 메뉴와 아래 링크로 원하는 기능을 바로 열 수 있습니다.
 
 ## 제공 도구
 
@@ -12,10 +12,7 @@
 | --- | --- |
 | [이미지 용량 줄이기](https://work.limjaejoon.com/image-compressor/) | JPG·PNG·WebP 이미지의 형식과 해상도를 유지하며 용량을 줄입니다. 원본과 실제 압축 결과를 나란히 확인할 수 있습니다. |
 | [이미지 확장자 변환](https://work.limjaejoon.com/image-converter/) | JPG·PNG·WebP 형식을 바꾸고 크기를 조절합니다. 최대 30장을 선택해 ZIP으로 다운로드할 수 있습니다. |
-| [사진을 PDF로](https://work.limjaejoon.com/images-to-pdf/) | 여러 사진의 순서, 용지 크기와 여백을 정해 PDF 하나로 묶습니다. |
 | [PDF 페이지 편집](https://work.limjaejoon.com/pdf-edit/) | 페이지를 미리 보고 순서를 바꾸거나 회전·삭제합니다. |
-| [PDF 합치기](https://work.limjaejoon.com/pdf-merge/) | 여러 PDF를 원하는 순서대로 합칩니다. |
-| [PDF 나누기](https://work.limjaejoon.com/pdf-split/) | 필요한 페이지 범위를 추출하고 여러 결과를 ZIP으로 받습니다. |
 | [PDF 용량 줄이기](https://work.limjaejoon.com/pdf-compressor/) | 스캔본과 이미지가 많은 PDF를 압축합니다. 결과가 더 커지면 원본을 제공합니다. |
 | [문서를 PDF로](https://work.limjaejoon.com/document-to-pdf/) | DOCX·PPTX를 PDF로 변환합니다. HWP·HWPX는 실험 기능으로 지원합니다. |
 | [글자 수 세기](https://work.limjaejoon.com/character-counter/) | 공백 포함·제외 글자 수와 바이트 수를 확인합니다. 작성 중인 글은 같은 브라우저에서 복원할 수 있습니다. |

@@ -7,34 +7,16 @@ export const toolRoutes = [
     description: 'JPG·PNG·WebP 한 장을 브라우저에서 압축합니다.',
   },
   {
-    modelId: null,
+    modelId: 'image-format-converter',
     href: '/image-converter/',
     label: '이미지 확장자 변환',
     description: 'JPG·PNG·WebP 형식을 바꾸고 크기를 조절합니다.',
-  },
-  {
-    modelId: 'photos-to-pdf',
-    href: '/images-to-pdf/',
-    label: '사진을 PDF로',
-    description: '여러 사진의 순서를 정하고 PDF 하나로 묶습니다.',
   },
   {
     modelId: 'pdf',
     href: '/pdf-edit/',
     label: 'PDF 페이지 편집',
     description: '페이지 순서를 바꾸고 회전하거나 삭제합니다.',
-  },
-  {
-    modelId: null,
-    href: '/pdf-merge/',
-    label: 'PDF 합치기',
-    description: '여러 PDF를 선택한 순서대로 합칩니다.',
-  },
-  {
-    modelId: null,
-    href: '/pdf-split/',
-    label: 'PDF 나누기',
-    description: '페이지 범위를 골라 추출하거나 나눕니다.',
   },
   {
     modelId: 'character-counter',

@@ -10,17 +10,6 @@ export function validateFile(bytes: Buffer, tool: Tool): string {
   let kind = '';
   if (bytes.subarray(0, 5).toString() === '%PDF-') kind = 'application/pdf';
   else if (
-    bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-  )
-    kind = 'image/png';
-  else if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255)
-    kind = 'image/jpeg';
-  else if (
-    bytes.subarray(0, 4).toString() === 'RIFF' &&
-    bytes.subarray(8, 12).toString() === 'WEBP'
-  )
-    kind = 'image/webp';
-  else if (
     bytes
       .subarray(0, 8)
       .equals(Buffer.from([208, 207, 17, 224, 161, 177, 26, 225]))
@@ -81,12 +70,10 @@ export function validateFile(bytes: Buffer, tool: Tool): string {
         'application/vnd.openxmlformats-officedocument.presentationml.presentation';
   }
   const accepted =
-    tool === 'images-to-pdf'
-      ? kind.startsWith('image/')
-      : tool === 'document-to-pdf'
-        ? kind.includes('openxmlformats') ||
-          ['application/x-hwp', 'application/hwp+zip'].includes(kind)
-        : kind === 'application/pdf';
+    tool === 'document-to-pdf'
+      ? kind.includes('openxmlformats') ||
+        ['application/x-hwp', 'application/hwp+zip'].includes(kind)
+      : kind === 'application/pdf';
   if (!accepted)
     throw new BadRequestException(
       '이 도구에서 지원하지 않거나 손상된 파일입니다.'

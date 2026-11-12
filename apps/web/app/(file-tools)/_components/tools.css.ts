@@ -3,7 +3,7 @@ import { paperTheme as theme } from '@/lib/styles/tokens';
 
 /** 기존 이미지 도구와 같은 작업대 색상으로 문서 도구를 묶는다. */
 export const page = style({
-  minHeight: '100svh',
+  minHeight: 'calc(100svh - var(--site-header-height))',
   boxSizing: 'border-box',
   background: theme.desk,
   color: theme.ink,
@@ -13,14 +13,6 @@ export const page = style({
 });
 /** 긴 파일 이름에도 화면 폭을 유지한다. */
 export const content = style({ maxWidth: 960, margin: '0 auto', minWidth: 0 });
-/** 보조 도구 이동은 처리 버튼과 시각적으로 구분한다. */
-export const nav = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '10px 20px',
-  marginBottom: 28,
-  fontSize: 14,
-});
 /** 페이지 제목은 부분 글꼴에 없는 문자를 기본 한글 글꼴로 표시한다. */
 export const heading = style({
   fontSize: 'clamp(26px, 5vw, 38px)',
@@ -60,22 +52,6 @@ export const button = style({
     outlineOffset: 3,
   },
 });
-/** 입력은 작은 화면에서도 부모 영역을 넘지 않는다. */
-export const input = style({
-  maxWidth: '100%',
-  boxSizing: 'border-box',
-  font: 'inherit',
-  color: theme.ink,
-  background: theme.paper,
-  border: `1px solid ${theme.rangeThumbBorder}`,
-  borderRadius: 5,
-  padding: 8,
-});
-/** 범위 입력은 줄마다 다른 결과를 요청한다. */
-export const textarea = style([
-  input,
-  { display: 'block', width: '100%', minHeight: 100, marginTop: 8 },
-]);
 /** 파일 목록은 긴 이름과 조작 버튼이 함께 보이도록 줄바꿈한다. */
 export const item = style({
   display: 'flex',
@@ -117,9 +93,6 @@ export const status = style({
   borderRadius: 8,
   marginTop: 16,
 });
-
-/** 기본 fieldset 테두리 대신 작업대 안에서 옵션을 묶는다. */
-export const options = style({ border: 0, padding: 0, margin: 0, minWidth: 0 });
 
 /** 화면 밖 Canvas를 비워도 카드 높이는 유지해 불필요한 재배치를 막는다. */
 export const thumbnailFrame = style({

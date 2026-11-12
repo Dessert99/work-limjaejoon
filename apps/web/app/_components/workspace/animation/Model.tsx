@@ -123,7 +123,10 @@ export default function Model({
     };
     const toolRoots: Object3D[] = [];
     gltf.scene.traverse((object) => {
-      if (object.userData.source_asset) toolRoots.push(object);
+      if (!object.userData.source_asset) return;
+      // 도구 목록에서 빠진 자산은 이전 GLB에 남아 있어도 홈에 표시하지 않는다.
+      object.visible = Boolean(findToolRoute(object.userData.tool_id));
+      if (object.visible) toolRoots.push(object);
     });
     toolRoots.sort((a, b) => a.userData.layout_slot - b.userData.layout_slot);
     const materials = new Set<MeshStandardMaterial>();

@@ -17,12 +17,6 @@ export default function ImageConverterPage() {
   return (
     <main className={styles.page}>
       <div className={styles.content}>
-        <Link
-          href='/'
-          prefetch={false}
-          className={styles.home}>
-          ← 홈으로
-        </Link>
         <h1 className={styles.title}>이미지 확장자 변환</h1>
         <p>
           JPG·PNG·WebP 형식을 바꾸고 긴 변 크기를 조절하세요. 이미지는

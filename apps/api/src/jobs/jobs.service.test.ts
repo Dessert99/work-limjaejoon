@@ -21,7 +21,7 @@ afterEach(async () => {
   vi.unstubAllEnvs();
 });
 
-async function uploaded(tool: Tool = 'pdf-merge') {
+async function uploaded(tool: Tool = 'pdf-edit') {
   const { id } = await service.create({ tool, options: {} }, '127.0.0.1');
   const { directory } = service.beginUpload(id);
   const path = join(directory, 'upload');
@@ -36,8 +36,17 @@ async function uploaded(tool: Tool = 'pdf-merge') {
 }
 
 describe('작업 큐와 임시 파일 수명', () => {
+  it.each(['images-to-pdf', 'pdf-split', 'pdf-merge'])(
+    '삭제한 기능 %s의 작업 생성을 거부한다',
+    async (tool) => {
+      await expect(service.create({ tool }, '127.0.0.1')).rejects.toThrow(
+        '지원하지 않는 도구'
+      );
+    }
+  );
+
   it('공간이 확보되면 업로드를 예약하고 대기 중 취소하면 재시도를 멈춘다', async () => {
-    const { id } = await service.create({ tool: 'pdf-merge' }, '127.0.0.1');
+    const { id } = await service.create({ tool: 'pdf-edit' }, '127.0.0.1');
     const begin = vi.spyOn(service, 'beginUpload');
     try {
       begin.mockImplementationOnce(() => {
@@ -65,7 +74,7 @@ describe('작업 큐와 임시 파일 수명', () => {
   });
 
   it('잘못된 파일은 지우고 업로드 예약을 해제한다', async () => {
-    const { id } = await service.create({ tool: 'pdf-merge' }, '127.0.0.1');
+    const { id } = await service.create({ tool: 'pdf-edit' }, '127.0.0.1');
     const { directory } = service.beginUpload(id);
     const path = join(directory, 'invalid');
     await writeFile(path, 'plain text');
@@ -83,7 +92,7 @@ describe('작업 큐와 임시 파일 수명', () => {
   });
 
   it('업로드 중 취소한 작업은 업로드 오류 정리 경로에서도 폴더를 지운다', async () => {
-    const { id } = await service.create({ tool: 'pdf-merge' }, '127.0.0.1');
+    const { id } = await service.create({ tool: 'pdf-edit' }, '127.0.0.1');
     const { directory } = service.beginUpload(id);
     await writeFile(join(directory, 'partial'), 'partial upload');
     await service.remove(id);
@@ -162,7 +171,7 @@ describe('작업 큐와 임시 파일 수명', () => {
     const first = await uploaded('pdf-compress');
     const second = await uploaded('pdf-compress');
     const third = await uploaded('pdf-compress');
-    const light = await uploaded('pdf-merge');
+    const light = await uploaded('pdf-edit');
     service.start(first.id);
     service.start(second.id);
     service.start(third.id);

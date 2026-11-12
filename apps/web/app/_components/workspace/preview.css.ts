@@ -1,20 +1,15 @@
-import { globalStyle, style } from '@vanilla-extract/css';
+import { style } from '@vanilla-extract/css';
 import { colors } from '@/lib/styles/tokens';
 
-globalStyle('body', {
-  margin: 0,
-  background: colors.background,
-  color: colors.foreground,
-  fontFamily: 'Arial, sans-serif',
+/** 헤더 아래 남은 화면을 작업방으로 채운다. */
+export const page = style({
+  width: '100%',
+  minHeight: 'calc(100svh - var(--site-header-height))',
 });
-globalStyle('*', { boxSizing: 'border-box' });
-
-/** 홈 화면을 뷰포트 높이 이상으로 유지한다. */
-export const page = style({ width: '100%', minHeight: '100svh' });
 /** 장면의 좌표계와 로딩 화면은 첫 화면 크기로 유지한다. */
 export const sceneViewport = style({
   width: '100%',
-  height: '100svh',
+  height: 'calc(100svh - var(--site-header-height))',
   position: 'relative',
   overflow: 'hidden',
 });

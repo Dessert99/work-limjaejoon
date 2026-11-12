@@ -39,14 +39,7 @@ type Job = {
     originalReturned?: boolean;
   };
 };
-const tools: Tool[] = [
-  'images-to-pdf',
-  'pdf-merge',
-  'pdf-split',
-  'pdf-edit',
-  'pdf-compress',
-  'document-to-pdf',
-];
+const tools: Tool[] = ['pdf-edit', 'pdf-compress', 'document-to-pdf'];
 const maxFile = 90_000_000;
 const maxInput = 300_000_000;
 const capacity = 900_000_000;
@@ -156,14 +149,7 @@ export class JobsService implements OnModuleDestroy {
     const job = this.get(id);
     if (job.state !== 'uploading' || job.receiving)
       throw new BadRequestException('지금은 파일을 추가할 수 없습니다.');
-    const count =
-      job.tool === 'images-to-pdf'
-        ? 50
-        : job.tool === 'pdf-split'
-          ? 1
-          : ['pdf-compress', 'document-to-pdf'].includes(job.tool)
-            ? 3
-            : 20;
+    const count = job.tool === 'pdf-edit' ? 20 : 3;
     if (job.files.length >= count)
       throw new BadRequestException(`파일은 최대 ${count}개까지 선택하세요.`);
     const remaining =

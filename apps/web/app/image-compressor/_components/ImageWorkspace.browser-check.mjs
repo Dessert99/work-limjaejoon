@@ -154,7 +154,11 @@ try {
           assert(Math.abs(panel.x + panel.width / 2 - width / 2) < 2);
           assert(button.x > panel.x + panel.width);
         }
-        assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        assert(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth
+          )
+        );
       }
       await page.setViewportSize({ width: 1440, height: 1000 });
       assert(bytes.length <= Math.floor(input.length * 0.3));
@@ -312,7 +316,7 @@ try {
   await (await cancel).setFiles([]);
   await page.waitForTimeout(500);
   assert.equal(await page.locator('figure img').count(), 0);
-    assert.equal(await initialSlider.count(), 0);
+  assert.equal(await initialSlider.count(), 0);
   assert(await download.isDisabled());
   for (const width of [1440, 1280, 390]) {
     await page.setViewportSize({ width, height: 900 });

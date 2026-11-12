@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict';
 import { PDFDocument, rgb } from 'pdf-lib';
 import { chromium } from '@playwright/test';
-import { zipSync, unzipSync, strToU8, zlibSync } from 'fflate';
+import { zipSync, strToU8 } from 'fflate';
 
 // 기능 하나가 완성될 때 TOOL을 지정해 작은 파일의 실제 처리와 다운로드만 확인한다.
 const tool = process.env.TOOL;
 const routes = {
-  'images-to-pdf': 'images-to-pdf',
-  'pdf-merge': 'pdf-merge',
-  'pdf-split': 'pdf-split',
   'pdf-edit': 'pdf-edit',
   'pdf-compress': 'pdf-compressor',
   'document-to-pdf': 'document-to-pdf',
@@ -33,12 +30,6 @@ const second = await makePdf([350]);
 const inputs = [
   { name: '첫째.pdf', mimeType: 'application/pdf', buffer: first },
 ];
-if (tool === 'pdf-merge')
-  inputs.push({
-    name: '둘째.pdf',
-    mimeType: 'application/pdf',
-    buffer: second,
-  });
 if (tool === 'pdf-edit') {
   inputs.splice(
     0,
@@ -50,41 +41,6 @@ if (tool === 'pdf-edit') {
     },
     { name: '둘째.pdf', mimeType: 'application/pdf', buffer: second }
   );
-}
-function pngChunk(type, bytes) {
-  const payload = Buffer.concat([Buffer.from(type), bytes]);
-  let crc = 0xffffffff;
-  for (const byte of payload) {
-    crc ^= byte;
-    for (let bit = 0; bit < 8; bit++)
-      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
-  }
-  const size = Buffer.alloc(4);
-  size.writeUInt32BE(bytes.length);
-  const checksum = Buffer.alloc(4);
-  checksum.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
-  return Buffer.concat([size, payload, checksum]);
-}
-if (tool === 'images-to-pdf') {
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(2, 0);
-  header.writeUInt32BE(2, 4);
-  header[8] = 8;
-  header[9] = 2;
-  const pixels = Buffer.from([
-    0, 255, 0, 0, 0, 255, 0, 0, 0, 0, 255, 255, 255, 255,
-  ]);
-  const image = Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    pngChunk('IHDR', header),
-    pngChunk('IDAT', Buffer.from(zlibSync(pixels))),
-    pngChunk('IEND', Buffer.alloc(0)),
-  ]);
-  inputs.splice(0, 1, {
-    name: '사진.png',
-    mimeType: 'image/png',
-    buffer: image,
-  });
 }
 if (tool === 'document-to-pdf') {
   const entries = {
@@ -145,8 +101,6 @@ try {
     exact: true,
   });
   await page.locator('input[type=file]').setInputFiles(inputs);
-  if (tool === 'pdf-split')
-    await page.getByLabel('추출할 페이지 범위').fill('3, 1\n2');
   if (tool === 'pdf-edit') {
     const thumbnail = workspace.locator('[data-pdf-thumbnail]').first();
     await thumbnail.scrollIntoViewIfNeeded();
@@ -182,9 +136,6 @@ try {
       .click();
   }
   const actions = {
-    'images-to-pdf': 'PDF 만들기',
-    'pdf-merge': 'PDF 합치기',
-    'pdf-split': '페이지 추출하기',
     'pdf-edit': 'PDF 저장',
     'pdf-compress': 'PDF 압축하기',
     'document-to-pdf': 'PDF로 변환하기',
@@ -240,51 +191,17 @@ try {
     const chunks = [];
     for await (const chunk of stream) chunks.push(chunk);
     const bytes = Buffer.concat(chunks);
-    if (tool === 'pdf-split') {
-      const parts = Object.values(unzipSync(bytes));
-      assert.equal(parts.length, 2);
-      assert.equal((await PDFDocument.load(parts[0])).getPageCount(), 2);
-      assert.equal((await PDFDocument.load(parts[1])).getPageCount(), 1);
-    } else {
-      const pdf = await PDFDocument.load(bytes);
-      assert.equal(
-        pdf.getPageCount(),
-        tool === 'pdf-merge'
-          ? 4
-          : tool === 'pdf-edit'
-            ? 2
-            : tool === 'pdf-compress'
-              ? 3
-              : 1
-      );
-      if (tool === 'images-to-pdf')
-        assert(Math.abs(pdf.getPage(0).getWidth() - 595.28) < 1);
-      if (tool === 'pdf-merge') assert.equal(pdf.getPage(3).getWidth(), 350);
-      if (tool === 'pdf-edit') {
-        assert.equal(pdf.getPage(0).getRotation().angle, 90);
-        assert.equal(pdf.getPage(0).getWidth(), 350);
-        assert.equal(pdf.getPage(1).getWidth(), 250);
-      }
-      if (tool === 'pdf-compress') assert(bytes.length <= first.length);
+    const pdf = await PDFDocument.load(bytes);
+    assert.equal(
+      pdf.getPageCount(),
+      tool === 'pdf-edit' ? 2 : tool === 'pdf-compress' ? 3 : 1
+    );
+    if (tool === 'pdf-edit') {
+      assert.equal(pdf.getPage(0).getRotation().angle, 90);
+      assert.equal(pdf.getPage(0).getWidth(), 350);
+      assert.equal(pdf.getPage(1).getWidth(), 250);
     }
-    if (tool === 'images-to-pdf') {
-      await page.getByLabel('여백 (pt)').fill('10');
-      assert.equal(
-        await workspace
-          .getByRole('button', { name: '다운로드 완료', exact: true })
-          .count(),
-        0
-      );
-    }
-    if (tool === 'pdf-split') {
-      await page.getByLabel('추출할 페이지 범위').fill('1');
-      assert.equal(
-        await workspace
-          .getByRole('button', { name: '다운로드 완료', exact: true })
-          .count(),
-        0
-      );
-    }
+    if (tool === 'pdf-compress') assert(bytes.length <= first.length);
     assert.deepEqual(errors, []);
     console.log(`${tool}: 작은 파일 처리와 다운로드 검사 통과`);
   }

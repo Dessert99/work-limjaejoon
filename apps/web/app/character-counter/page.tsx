@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import CharacterCounter from './_components/CharacterCounter';
 import * as styles from './_components/counter.css';
 
@@ -17,12 +16,6 @@ export default function CharacterCounterPage() {
   return (
     <main className={styles.page}>
       <div className={styles.content}>
-        <Link
-          href='/'
-          prefetch={false}
-          className={styles.home}>
-          ← 홈으로
-        </Link>
         <h1 className={styles.title}>글자 수 세기</h1>
         <p>
           자소서와 과제 분량을 확인하세요. 입력한 글은 서버로 보내지 않습니다.

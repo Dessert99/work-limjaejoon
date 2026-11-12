@@ -3,8 +3,7 @@ import { paperTheme } from '@/lib/styles/tokens';
 
 /** 기존 압축 화면과 같은 종이 색상으로 별도 변환 작업대를 제공한다. */
 export const page = style({
-  minHeight: '100dvh',
-  margin: -8,
+  minHeight: 'calc(100svh - var(--site-header-height))',
   padding: '36px 20px 64px',
   boxSizing: 'border-box',
   background: paperTheme.desk,
@@ -14,8 +13,6 @@ export const page = style({
 });
 /** 넓은 화면에서도 입력과 결과를 한눈에 비교할 수 있게 한다. */
 export const content = style({ maxWidth: 1000, margin: '0 auto' });
-/** 초기 정적 HTML에서도 홈 이동을 제공한다. */
-export const home = style({ color: paperTheme.ink, textUnderlineOffset: 4 });
 /** 부분 글꼴에 의존하지 않아 새 제목 글자가 빠지지 않게 한다. */
 export const title = style({
   fontSize: 'clamp(28px, 4vw, 40px)',
