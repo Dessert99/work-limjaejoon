@@ -1,10 +1,15 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import HeaderNav from './HeaderNav';
 import * as styles from './header.css';
 
-/** 모든 화면에서 같은 브랜드와 현재 제공하는 도구의 이동 경로를 제공한다. */
+/** 홈을 제외한 도구 화면에서 같은 브랜드와 기능 이동 경로를 제공한다. */
 export default function Header() {
+  const pathname = usePathname();
+  if (pathname === '/') return null;
   return (
     <header className={styles.header}>
       <div className={styles.inner}>

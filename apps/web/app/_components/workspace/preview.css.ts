@@ -1,15 +1,15 @@
 import { style } from '@vanilla-extract/css';
 import { colors } from '@/lib/styles/tokens';
 
-/** 헤더 아래 남은 화면을 작업방으로 채운다. */
+/** 홈은 헤더 없이 작업방으로 화면 전체를 채운다. */
 export const page = style({
   width: '100%',
-  minHeight: 'calc(100svh - var(--site-header-height))',
+  minHeight: '100svh',
 });
 /** 장면의 좌표계와 로딩 화면은 첫 화면 크기로 유지한다. */
 export const sceneViewport = style({
   width: '100%',
-  height: 'calc(100svh - var(--site-header-height))',
+  height: '100svh',
   position: 'relative',
   overflow: 'hidden',
 });
