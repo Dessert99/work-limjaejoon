@@ -15,7 +15,7 @@
 | [PDF 페이지 편집](https://work.limjaejoon.com/pdf-edit/) | 페이지를 미리 보고 순서를 바꾸거나 회전·삭제합니다. |
 | [PDF 용량 줄이기](https://work.limjaejoon.com/pdf-compressor/) | 스캔본과 이미지가 많은 PDF를 압축합니다. 결과가 더 커지면 원본을 제공합니다. |
 | [문서를 PDF로](https://work.limjaejoon.com/document-to-pdf/) | DOCX·PPTX를 PDF로 변환합니다. HWP·HWPX는 실험 기능으로 지원합니다. |
-| [글자 수 세기](https://work.limjaejoon.com/character-counter/) | 공백 포함·제외 글자 수와 바이트 수를 확인합니다. 작성 중인 글은 같은 브라우저에서 복원할 수 있습니다. |
+| [글자 수 세기](https://work.limjaejoon.com/character-counter/) | 공백 포함·제외 글자 수를 확인합니다. 작성 중인 글은 같은 브라우저에서 복원할 수 있습니다. |
 
 ## 파일과 입력한 글의 처리
 
