@@ -22,7 +22,7 @@ export const toolRoutes = [
     modelId: 'character-counter',
     href: '/character-counter/',
     label: '글자 수 세기',
-    description: '공백 포함·제외 글자 수와 바이트 수를 확인합니다.',
+    description: '공백 포함·제외 글자 수를 확인합니다.',
   },
   {
     modelId: 'pdf-compressor',

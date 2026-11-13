@@ -26,14 +26,7 @@ try {
     (await page.locator('[data-count="공백 제외"]').textContent()).trim(),
     '3 자'
   );
-  assert.equal(
-    (await page.locator('[data-count="UTF-8"]').textContent()).trim(),
-    '18 byte'
-  );
-  assert.equal(
-    (await page.locator('[data-count="EUC-KR 방식"]').textContent()).trim(),
-    '11 byte'
-  );
+  assert.equal(await page.locator('[data-count]').count(), 2);
   // 입력이 저장된 별도 탭에서 복원을 확인해 기존 탭의 미저장 상태를 건드리지 않는다.
   const restored = await context.newPage();
   await restored.goto(`${base}/character-counter/`);

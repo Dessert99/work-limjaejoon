@@ -51,15 +51,12 @@ export const textarea = style({
     outlineOffset: 3,
   },
 });
-/** 작은 화면에서는 두 열로 줄여 계산 결과가 넘치지 않게 한다. */
+/** 두 글자 수 결과를 같은 폭으로 배치한다. */
 export const metrics = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: 12,
   margin: '24px 0 16px',
-  '@media': {
-    '(max-width: 620px)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
-  },
 });
 /** 계산 기준별 숫자를 가까이 배치한다. */
 export const metric = style({

@@ -30,8 +30,6 @@ export default function CharacterCounter() {
   const metrics = [
     ['공백 포함', counts.characters, '자'],
     ['공백 제외', counts.withoutSpaces, '자'],
-    ['EUC-KR 방식', counts.legacyBytes, 'byte'],
-    ['UTF-8', counts.utf8Bytes, 'byte'],
   ] as const;
   return (
     <section
